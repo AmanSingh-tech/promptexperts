@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { LogOut, Menu, X } from 'lucide-react';
 import { levelFor, tierFor } from '@/lib/game';
@@ -42,7 +42,6 @@ function PlayerChip() {
 export function Navbar() {
   const { user, ready, signOut } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const links = [
@@ -73,9 +72,8 @@ export function Navbar() {
   };
 
   const doSignOut = () => {
-    signOut();
     setOpen(false);
-    router.push('/');
+    signOut('/');
   };
 
   return (

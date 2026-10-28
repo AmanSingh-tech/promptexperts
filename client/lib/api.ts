@@ -1,5 +1,6 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const TOKEN_KEY = 'ailogracer.token';
+// Empty by default: the browser calls same-origin /api, which Next.js proxies to the API server.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const LEGACY_TOKEN_KEY = 'ailogracer.token';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -7,40 +8,30 @@ export class ApiError extends Error {
   }
 }
 
-export function getToken(): string | null {
+export function clearLegacyToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
   } catch {
-    return null;
-  }
-}
-
-export function setToken(token: string | null) {
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // storage unavailable (private mode); the session just won't persist
+    // storage unavailable; nothing to clear
   }
 }
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const token = getToken();
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
       method: options.method ?? 'GET',
+      credentials: 'include',
       headers: {
-        ...(options.body !== undefined && { 'Content-Type': 'application/json' }),
-        ...(token && { Authorization: `Bearer ${token}` })
+        'X-Requested-With': 'ailogracer',
+        ...(options.body !== undefined && { 'Content-Type': 'application/json' })
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined
     });
   } catch {
     throw new ApiError(0, 'Cannot reach the server. Is the API running?');
   }
-  if (res.status === 401 && token) {
-    setToken(null);
+  if (res.status === 401) {
     window.dispatchEvent(new Event('ailogracer:logout'));
   }
   if (res.status === 204) return undefined as T;

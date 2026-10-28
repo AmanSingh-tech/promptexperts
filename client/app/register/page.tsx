@@ -21,8 +21,8 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api<{ token: string; user: User }>('/api/auth/register', { method: 'POST', body: form });
-      signIn(res.token, res.user);
+      const res = await api<{ user: User }>('/api/auth/register', { method: 'POST', body: form });
+      signIn(res.user);
       router.push('/problems');
     } catch (err) {
       setError(errorMessage(err));

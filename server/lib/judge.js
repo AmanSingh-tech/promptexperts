@@ -73,7 +73,9 @@ export async function judge({ language, code, tests, timeLimitMs = 2000 }) {
   const ext = LANGUAGES[language];
   if (!ext) throw Object.assign(new Error(`Unsupported language: ${language}`), { status: 400 });
 
-  const root = await mkdtemp(path.join(tmpdir(), 'ailog-judge-'));
+  // In Docker deployments this must be a host path mounted at the same location, because the
+  // sandbox containers are started by the host daemon and bind-mount it from the host.
+  const root = await mkdtemp(path.join(process.env.JUDGE_WORKDIR || tmpdir(), 'ailog-judge-'));
   const workDir = path.join(root, 'work');
   const outDir = path.join(root, 'out');
   try {

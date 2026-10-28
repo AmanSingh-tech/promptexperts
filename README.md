@@ -60,6 +60,25 @@ The server uses the Anthropic SDK's standard credential lookup (`ANTHROPIC_API_K
 
 `MAX_MESSAGES_PER_SESSION` (default 60) caps chat messages per attempt.
 
+### Accounts and security
+
+- Sessions are httpOnly, `SameSite=Lax` cookies. Cookie-authenticated writes must send `X-Requested-With: ailogracer`, which the web app does automatically. API clients can use the `token` returned by login as a Bearer token instead.
+- The web app proxies `/api/*` to the API (`API_ORIGIN`), so the cookie belongs to the site itself and no CORS is needed in production.
+- Sign-in is rate-limited (10 failures per 15 minutes per IP and username). Password reset links expire after 30 minutes and work once. They are emailed through `SMTP_URL`, or printed to the API log when that isn't set. Admins can generate reset links from **Admin → Users**.
+- Changing or resetting a password, or choosing **Sign out everywhere**, revokes every other session.
+
+### Production deployment
+
+```bash
+cp .env.production.example .env.production   # fill in secrets
+docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker-compose -f docker-compose.prod.yml exec api node prisma/seed.js   # first run only
+```
+
+This builds the judge sandbox image, runs migrations on start, and serves the web app on `WEB_PORT` (default 3000). Put an HTTPS reverse proxy in front of it. The API container mounts the host Docker socket to start sandboxes, plus a host directory at the same path (`JUDGE_DIR`, default `/var/lib/ailogracer-judge`). Anyone who compromises the API container controls the host's Docker daemon, so run the stack on a dedicated host or VM.
+
+CI (`.github/workflows/ci.yml`) runs migrations, seeds, the unit and API tests, and the client type check and build on every push and pull request.
+
 ### Judge modes
 
 `JUDGE_MODE=docker` (default) runs code in the sandbox image. `JUDGE_MODE=local` runs the same runner script directly on the host. It's faster for development but **not isolated**, so never use it with untrusted users.
@@ -95,7 +114,6 @@ Expected outputs for the seeded problems are generated from reference solutions 
 
 ## Known limitations
 
-- Auth tokens are stored in `localStorage` (simple, but exposed to any XSS). Move to httpOnly cookies before production.
 - Rate limiting is in-process (one concurrent judge run per user, `MAX_CONCURRENT_JUDGES` overall); use a shared limiter when running several API instances.
 - The automatic analysis is heuristic and English-centric; it suggests scores, and the reviewer decides.
 - There is no browser extension yet; external tools are covered by transcript import.

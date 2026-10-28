@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api, getToken, setToken } from '@/lib/api';
+import { api, clearLegacyToken } from '@/lib/api';
 import type { MyStats, User } from '@/lib/types';
 
 interface AuthState {
@@ -9,8 +9,8 @@ interface AuthState {
   ready: boolean;
   player: MyStats | null;
   refreshPlayer: () => void;
-  signIn: (token: string, user: User) => void;
-  signOut: () => void;
+  signIn: (user: User) => void;
+  signOut: (redirectTo?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -21,13 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!getToken()) {
-      setReady(true);
-      return;
-    }
-    api<User>('/api/auth/me')
-      .then(setUser)
-      .catch(() => setToken(null))
+    clearLegacyToken();
+    api<{ user: User | null }>('/api/auth/session')
+      .then((s) => setUser(s.user))
+      .catch(() => setUser(null))
       .finally(() => setReady(true));
   }, []);
 
@@ -46,14 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('ailogracer:logout', onLogout);
   }, []);
 
-  const signIn = useCallback((token: string, u: User) => {
-    setToken(token);
-    setUser(u);
-  }, []);
+  const signIn = useCallback((u: User) => setUser(u), []);
 
-  const signOut = useCallback(() => {
-    setToken(null);
-    setUser(null);
+  // Full navigation after the server clears the cookie: no route guard can race the redirect,
+  // and every piece of per-user client state is dropped.
+  const signOut = useCallback(async (redirectTo = '/') => {
+    await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    window.location.assign(redirectTo);
   }, []);
 
   return <AuthContext.Provider value={{ user, ready, player, refreshPlayer, signIn, signOut }}>{children}</AuthContext.Provider>;

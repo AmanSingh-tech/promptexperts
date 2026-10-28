@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, formatDate } from '@/lib/format';
@@ -38,6 +38,16 @@ function Admin() {
       await api(`/api/problems/${p.id}`, { method: 'DELETE' });
       setProblems((ps) => ps?.filter((x) => x.id !== p.id) ?? null);
       toast.success(`Deleted “${p.title}”`);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  async function resetLink(u: AdminUser) {
+    try {
+      const { link, expiresInMinutes } = await api<{ link: string; expiresInMinutes: number }>(`/api/auth/admin/reset-link/${u.id}`, { method: 'POST' });
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast.success(`Reset link for ${u.username} copied`, { description: `Valid once, for ${expiresInMinutes} minutes. ${link}`, duration: 15000 });
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -103,7 +113,7 @@ function Admin() {
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-slate-800 text-left font-display text-[11px] uppercase tracking-wider text-slate-400">
-              <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Submissions</th><th className="px-4 py-3 text-right">Reviews</th><th className="px-4 py-3">Role</th></tr>
+              <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Submissions</th><th className="px-4 py-3 text-right">Reviews</th><th className="px-4 py-3">Role</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {users.map((u) => (
@@ -124,6 +134,11 @@ function Admin() {
                       <option value="REVIEWER">Reviewer</option>
                       <option value="ADMIN">Admin</option>
                     </select>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => resetLink(u)} className="press inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-display text-xs font-semibold uppercase tracking-wider text-slate-300 hover:bg-slate-800 hover:text-white">
+                      <KeyRound className="h-3.5 w-3.5" /> Reset link
+                    </button>
                   </td>
                 </tr>
               ))}

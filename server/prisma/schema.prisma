@@ -55,6 +55,12 @@ enum SessionEventType {
   PASTE
 }
 
+enum EvaluationStatus {
+  PENDING
+  DISPUTED
+  FINAL
+}
+
 enum SolveStatus {
   ACCEPTED
   WRONG_ANSWER
@@ -73,13 +79,29 @@ model User {
   firstName   String   @default("")
   lastName    String   @default("")
   role        Role     @default(USER)
+  tokenVersion Int     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   solves      Solve[]
   aiSessions  AISession[]
   reviews     Evaluation[] @relation("Reviewer")
+  reviewEntries Review[]
   problems    Problem[]    @relation("ProblemAuthor")
+  resetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Problem {
@@ -206,6 +228,7 @@ model Solve {
   problem     Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
   aiSession   AISession?  @relation(fields: [aiSessionId], references: [id], onDelete: SetNull)
   evaluation  Evaluation?
+  reviews     Review[]
 
   @@index([userId])
   @@index([problemId])
@@ -223,9 +246,33 @@ model Evaluation {
   aiUsageScore   Int
   finalScore     Int
   notes          String?  @db.Text
+  status         EvaluationStatus @default(FINAL)
+  reviewCount    Int      @default(1)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   solve          Solve    @relation(fields: [solveId], references: [id], onDelete: Cascade)
   reviewer       User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+// One reviewer's scores. Evaluation holds the combined result of all reviews for a submission.
+model Review {
+  id             String   @id @default(cuid())
+  solveId        String
+  reviewerId     String
+  solutionScore  Int?
+  aiEfficiency   Int
+  aiLearning     Int
+  aiTransparency Int
+  aiInnovation   Int
+  notes          String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  solve          Solve    @relation(fields: [solveId], references: [id], onDelete: Cascade)
+  reviewer       User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([solveId, reviewerId])
 }

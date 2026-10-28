@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { RequireAuth } from '@/components/RequireAuth';
 import { useAuth } from '@/components/AuthProvider';
 import { PlayerView } from '@/components/PlayerView';
+import { AccountSettings } from '@/components/AccountSettings';
 import { LinkButton, Spinner } from '@/components/ui';
 
 function Profile() {
@@ -23,6 +24,7 @@ function Profile() {
         subtitle={`@${user.username}${user.role !== 'USER' ? ` · ${user.role.toLowerCase()}` : ''}`}
         stats={player}
       />
+      <AccountSettings />
     </main>
   );
 }

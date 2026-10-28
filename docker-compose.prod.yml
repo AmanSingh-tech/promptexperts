@@ -1,0 +1,60 @@
+# Production-style stack: docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Put an HTTPS reverse proxy (Caddy, nginx, a load balancer) in front of the web service.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ailogracer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ailogracer
+    volumes:
+      - ailogracer-prod-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ailogracer"]
+      interval: 5s
+      retries: 20
+
+  # Builds the judge sandbox image on the host, then exits.
+  sandbox-image:
+    build: ./server/sandbox
+    image: ailogracer-sandbox
+    entrypoint: ["true"]
+    restart: "no"
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      DATABASE_URL: postgresql://ailogracer:${POSTGRES_PASSWORD}@db:5432/ailogracer
+      NODE_ENV: production
+      PORT: "3001"
+      JUDGE_MODE: docker
+      JUDGE_WORKDIR: ${JUDGE_DIR:-/var/lib/ailogracer-judge}
+      TRUST_PROXY: "true"
+    volumes:
+      # The API controls the host Docker daemon to start sandboxes. Anyone who compromises the API
+      # container gets that control too, so keep this host dedicated to AILOGRACER.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Same path inside and outside: sandbox bind mounts are resolved by the host daemon.
+      - ${JUDGE_DIR:-/var/lib/ailogracer-judge}:${JUDGE_DIR:-/var/lib/ailogracer-judge}
+    depends_on:
+      db:
+        condition: service_healthy
+      sandbox-image:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./client
+      args:
+        API_ORIGIN: http://api:3001
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+
+volumes:
+  ailogracer-prod-db:

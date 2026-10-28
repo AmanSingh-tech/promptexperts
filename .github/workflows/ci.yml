@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ailogracer
+          POSTGRES_PASSWORD: ailogracer
+          POSTGRES_DB: ailogracer
+        ports: ["5435:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ailogracer" --health-interval 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://ailogracer:ailogracer@localhost:5435/ailogracer
+      JWT_SECRET: ci-only-secret
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+      - name: Install
+        run: |
+          npm --prefix server ci
+          npm --prefix client ci
+      - name: Build judge sandbox
+        run: docker build -t ailogracer-sandbox server/sandbox
+      - name: Migrate and seed
+        run: |
+          npm --prefix server run db:deploy
+          npm --prefix server run db:seed
+      - name: Server tests
+        run: |
+          npm --prefix server test
+          npm --prefix server run test:api
+      - name: Client typecheck and build
+        run: |
+          npm --prefix client run typecheck
+          npm --prefix client run build

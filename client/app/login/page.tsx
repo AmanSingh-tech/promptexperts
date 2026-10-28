@@ -22,8 +22,8 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api<{ token: string; user: User }>('/api/auth/login', { method: 'POST', body: { username, password } });
-      signIn(res.token, res.user);
+      const res = await api<{ user: User }>('/api/auth/login', { method: 'POST', body: { username, password } });
+      signIn(res.user);
       router.push(next?.startsWith('/') ? next : '/problems');
     } catch (err) {
       setError(errorMessage(err));
@@ -44,6 +44,9 @@ function LoginForm() {
         <Field label="Password">
           <input className={inputClass} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
         </Field>
+        <div className="-mt-2 text-right">
+          <Link href="/forgot" className="text-xs font-semibold text-neon-300 hover:underline">Forgot password?</Link>
+        </div>
         <Button type="submit" loading={loading} className="w-full">Sign in</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">

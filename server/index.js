@@ -8,6 +8,7 @@ import sessionRoutes from './routes/sessions.js';
 import submissionRoutes from './routes/submissions.js';
 import evaluationRoutes from './routes/evaluations.js';
 import statsRoutes from './routes/stats.js';
+import { csrfGuard } from './middleware/auth.js';
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is not set. Copy .env.example to .env first.');
@@ -16,8 +17,19 @@ if (!process.env.JWT_SECRET) {
 
 export const app = express();
 app.disable('x-powered-by');
-app.use(cors({ origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',') }));
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Cache-Control': 'no-store'
+  });
+  next();
+});
+app.use(cors({ origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','), credentials: true }));
 app.use(express.json({ limit: '1mb' }));
+app.use(csrfGuard);
 
 app.get('/health', async (req, res) => {
   await prisma.$queryRaw`SELECT 1`;
