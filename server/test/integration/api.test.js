@@ -134,9 +134,25 @@ test('full solve -> import -> submit -> review -> leaderboard flow', async () =>
   assert.equal(own.body.evaluation.finalScore, 78);
   assert.equal(own.body.autoReview, undefined);
 
-  const board = await api('GET', '/api/leaderboard');
-  const row = board.body.find((r) => r.username === `alice_${suffix}`);
+  const board = await api('GET', '/api/leaderboard', { token });
+  const row = board.body.rows.find((r) => r.username === `alice_${suffix}`);
   assert.equal(row.totalPoints, 78);
+  assert.equal(board.body.me.username, `alice_${suffix}`);
+
+  const weekly = await api('GET', '/api/leaderboard?period=week');
+  assert.ok(weekly.body.rows.some((r) => r.username === `alice_${suffix}`));
+  assert.equal(weekly.body.period, 'week');
+
+  const aiBoard = await api('GET', '/api/leaderboard?board=ai', { token });
+  assert.equal(aiBoard.body.board, 'ai');
+  assert.equal(aiBoard.body.me, null, 'one reviewed challenge is below the average-board minimum');
+
+  const pub = await api('GET', `/api/players/alice_${suffix}`);
+  assert.equal(pub.status, 200);
+  assert.equal(pub.body.player.email, undefined);
+  assert.equal(pub.body.timeline[0].solveId, undefined, 'public profile must not expose submission ids');
+  assert.equal(pub.body.cleared[0].slug, 'two-sum');
+  assert.equal((await api('GET', '/api/players/nobody_here_xyz')).status, 404);
 
   const stats = await api('GET', '/api/me/stats', { token });
   assert.equal(stats.body.evaluated, 1);

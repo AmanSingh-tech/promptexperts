@@ -186,5 +186,22 @@ export interface MyStats {
   avgFinalScore: number;
   rubric: Record<keyof Rubric, number | null>;
   avgMessagesPerAttempt: number;
-  timeline: { solveId: string; problem: string; date: string; solutionScore: number; aiUsageScore: number; finalScore: number }[];
+  cleared: { slug: string; title: string; difficulty: Difficulty; bestFinalScore: number | null }[];
+  timeline: { solveId?: string; problem: string; slug: string; date: string; solutionScore: number; aiUsageScore: number; finalScore: number }[];
+}
+
+export interface PublicPlayer extends MyStats {
+  player: { username: string; firstName: string; role: Role; joinedAt: string };
+}
+
+export type Board = 'xp' | 'ai' | 'solution';
+export type Period = 'week' | 'month' | 'all';
+
+export interface LeaderboardResponse {
+  board: Board;
+  period: Period;
+  minForAverage: number;
+  total: number;
+  rows: LeaderboardRow[];
+  me: LeaderboardRow | null;
 }

@@ -16,7 +16,8 @@ The AI conversation is captured in two ways: a built-in Claude assistant next to
 | Attempts | Every attempt is an AI session. Submitting locks the code and the transcript together; "New attempt" discards the current conversation |
 | Review | Queue of pending/reviewed submissions, automatic transcript analysis (prompt quality, why/how questions, solution requests, code copied from AI, strengths and concerns) with suggested scores, and an optional Claude second opinion with rationale |
 | Scores | `AI usage = (mean rubric − 1) / 4 × 100`, `final = 0.4 × solution + 0.6 × AI usage` |
-| Leaderboard | Sum of each person's best final score per problem, filterable by category and difficulty |
+| Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
+| Player pages | Public `/players/:username` pages with level, tier, rank, skill stats, score history and cleared challenges. Code and AI transcripts stay private |
 | Profile | Score trend, rubric averages and a tip for the weakest rubric |
 | Admin | Create/edit problems with hidden and sample tests, starter code and tags; manage user roles (user, reviewer, admin); usage overview including Claude tokens |
 
@@ -48,6 +49,8 @@ Seeded accounts (change these outside local development):
 | --- | --- | --- |
 | `admin` | `admin12345` | Admin |
 | `reviewer` | `reviewer12345` | Reviewer |
+
+To see a populated leaderboard, `npm --prefix server run db:seed:demo` adds eight `demo_*` players (password `demo12345`) with reviewed runs; `npm --prefix server run db:seed:demo -- --remove` deletes them.
 
 The seed adds nine problems: six algorithm/data-structure problems with verified hidden tests, two system-design problems and one web-development problem.
 
@@ -86,7 +89,8 @@ Expected outputs for the seeded problems are generated from reference solutions 
 | GET | `/api/evaluations/queue`, `/api/evaluations/:solveId/analysis` | reviewer, admin |
 | POST | `/api/evaluations/:solveId/ai-review` | reviewer, admin |
 | PUT | `/api/evaluations/:solveId` | reviewer, admin (not on own submissions) |
-| GET | `/api/leaderboard`, `/api/me/stats` | anyone / signed in |
+| GET | `/api/leaderboard?board=xp\|ai\|solution&period=all\|month\|week`, `/api/players/:username` | anyone |
+| GET | `/api/me/stats` | signed in |
 | GET/PATCH | `/api/admin/overview`, `/api/admin/users`, `/api/admin/users/:id/role` | admin |
 
 ## Known limitations

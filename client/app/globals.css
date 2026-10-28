@@ -122,3 +122,13 @@ button, a, [role='tab'], summary {
     }
   }
 }
+
+.segment-clip {
+  transition: clip-path 220ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment-clip {
+    transition: none;
+  }
+}

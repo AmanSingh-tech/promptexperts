@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { Crown } from 'lucide-react';
 import { api } from '@/lib/api';
 import { levelFor } from '@/lib/game';
-import type { LeaderboardRow, ProblemSummary } from '@/lib/types';
+import type { LeaderboardResponse, LeaderboardRow, ProblemSummary } from '@/lib/types';
 import { cx } from './ui';
 
 export function LiveStats() {
   const [stats, setStats] = useState<{ problems: number; players: number; topScore: number } | null>(null);
   useEffect(() => {
-    Promise.all([api<ProblemSummary[]>('/api/problems'), api<LeaderboardRow[]>('/api/leaderboard')])
-      .then(([p, l]) => setStats({ problems: p.length, players: l.length, topScore: l[0]?.totalPoints ?? 0 }))
+    Promise.all([api<ProblemSummary[]>('/api/problems'), api<LeaderboardResponse>('/api/leaderboard')])
+      .then(([p, l]) => setStats({ problems: p.length, players: l.total, topScore: l.rows[0]?.totalPoints ?? 0 }))
       .catch(() => {});
   }, []);
   const items = [
@@ -38,7 +38,7 @@ const PODIUM = ['from-amber-300 to-amber-500', 'from-slate-200 to-slate-400', 'f
 export function TopPlayers() {
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null);
   useEffect(() => {
-    api<LeaderboardRow[]>('/api/leaderboard').then((r) => setRows(r.slice(0, 3))).catch(() => setRows([]));
+    api<LeaderboardResponse>('/api/leaderboard').then((r) => setRows(r.rows.slice(0, 3))).catch(() => setRows([]));
   }, []);
   if (!rows) return <div className="h-32" />;
   if (!rows.length) {
@@ -57,7 +57,7 @@ export function TopPlayers() {
               {i === 0 ? <Crown className="h-5 w-5" /> : i + 1}
             </span>
             <div className="min-w-0">
-              <p className="truncate font-semibold text-white">{r.username}</p>
+              <Link href={`/players/${r.username}`} className="block truncate font-semibold text-white hover:text-neon-300">{r.username}</Link>
               <p className="font-display text-xs uppercase tracking-wider text-slate-400">Level {levelFor(r.totalPoints).level}</p>
             </div>
           </div>
