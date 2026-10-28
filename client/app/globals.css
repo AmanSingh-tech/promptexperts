@@ -33,6 +33,11 @@ h1, h2, h3 {
   letter-spacing: -0.01em;
 }
 
+/* Code is read character by character here; ligatures like != -> ≠ hide what was typed. */
+code, pre, kbd, samp, .font-mono {
+  font-variant-ligatures: none;
+}
+
 button, a, [role='tab'], summary {
   touch-action: manipulation;
 }

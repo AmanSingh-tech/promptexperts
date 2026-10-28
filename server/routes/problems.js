@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { badRequest, notFound, intInRange } from '../lib/http.js';
 import { optionalAuth, requireRole, isStaff } from '../middleware/auth.js';
 import { LANGUAGES } from '../lib/judge.js';
+import { visibleProblemWhere } from '../lib/contests.js';
 
 const router = Router();
 
@@ -54,7 +55,7 @@ router.get('/', optionalAuth, async (req, res) => {
 router.get('/:idOrSlug', optionalAuth, async (req, res) => {
   const staff = isStaff(req.user);
   const problem = await prisma.problem.findFirst({
-    where: { OR: [{ id: req.params.idOrSlug }, { slug: req.params.idOrSlug }], ...(staff ? {} : { published: true }) },
+    where: { AND: [{ OR: [{ id: req.params.idOrSlug }, { slug: req.params.idOrSlug }] }, staff ? {} : visibleProblemWhere()] },
     include: {
       tags: { select: { tag: { select: { name: true } } } },
       testCases: { orderBy: { position: 'asc' }, ...(staff ? {} : { where: { isSample: true } }) },

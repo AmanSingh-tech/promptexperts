@@ -17,6 +17,7 @@ The AI conversation is captured in two ways: a built-in Claude assistant next to
 | Review | Queue with **To review / Disputed / Final** tabs. Reviewers get automatic transcript analysis with suggested scores, a code-history timeline with diffs (it flags large pastes), and an optional Claude second opinion. A rubric guide gives anchored examples for scores 1, 3 and 5 (`/review/guide`). With `REQUIRED_REVIEWS` set above 1, each submission needs that many independent reviews. Reviewers can't see each other's scores until they submit their own. If reviewers disagree (a gap of 2+ rubric points, 25+ solution points or 15+ final points), the result is **disputed** until an admin accepts it or adds a deciding review. Only final results reach the player and the leaderboard |
 | Scores | `AI usage = (mean rubric − 1) / 4 × 100`, `final = 0.4 × solution + 0.6 × AI usage` |
 | Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
+| Contests | Timed events with a start and end, an ordered set of challenges, and entrants. Unpublished challenges in a contest stay hidden until it starts. A submission counts only when it's made during the contest by someone who joined, on one of its challenges. Standings add up each player's best reviewed score per challenge, show pending reviews separately, and break ties by who reached their total first. Admins create and edit contests in **Admin → Contests** |
 | Player pages | Public `/players/:username` pages with level, tier, rank, skill stats, score history and cleared challenges. Code and AI transcripts stay private |
 | Profile | Score trend, rubric averages and a tip for the weakest rubric |
 | Admin | Create/edit problems with hidden and sample tests, starter code and tags; manage user roles (user, reviewer, admin); usage overview including Claude tokens |
@@ -110,10 +111,14 @@ Expected outputs for the seeded problems are generated from reference solutions 
 | PUT | `/api/evaluations/:solveId` | reviewer, admin (not on own submissions) |
 | GET | `/api/leaderboard?board=xp\|ai\|solution&period=all\|month\|week`, `/api/players/:username` | anyone |
 | GET | `/api/me/stats` | signed in |
+| GET | `/api/contests`, `/api/contests/:slug` (details plus standings) | anyone |
+| POST | `/api/contests/:slug/join`; `contestId` on `POST /api/submissions` | signed in |
+| POST/PATCH/DELETE | `/api/contests[/:id]` | admin |
 | GET/PATCH | `/api/admin/overview`, `/api/admin/users`, `/api/admin/users/:id/role` | admin |
 
 ## Known limitations
 
 - Rate limiting is in-process (one concurrent judge run per user, `MAX_CONCURRENT_JUDGES` overall); use a shared limiter when running several API instances.
 - The automatic analysis is heuristic and English-centric; it suggests scores, and the reviewer decides.
-- There is no browser extension yet; external tools are covered by transcript import.
+- There is no browser extension yet; external tools are covered by transcript import and file upload (ChatGPT and Claude.ai exports).
+- The Claude chat and AI second opinion have only been exercised against a stubbed API in tests; check them once with a real `ANTHROPIC_API_KEY`.

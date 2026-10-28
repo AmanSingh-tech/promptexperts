@@ -28,8 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Toaster
             theme="dark"
-            position="top-right"
-            offset={72}
+            position="bottom-left"
             toastOptions={{
               classNames: {
                 toast: '!bg-slate-900 !border-slate-700 !text-slate-100 !font-sans',

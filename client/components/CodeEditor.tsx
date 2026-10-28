@@ -66,7 +66,7 @@ export function CodeEditor({
         minimap: { enabled: false },
         fontSize: 14,
         fontFamily: 'var(--font-mono), ui-monospace, monospace',
-        fontLigatures: true,
+        fontLigatures: false,
         scrollBeyondLastLine: false,
         automaticLayout: true,
         tabSize: 4,

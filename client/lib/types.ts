@@ -247,3 +247,37 @@ export interface LeaderboardResponse {
   rows: LeaderboardRow[];
   me: LeaderboardRow | null;
 }
+
+export type ContestState = 'UPCOMING' | 'LIVE' | 'ENDED';
+
+export interface ContestSummary {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+  published: boolean;
+  state: ContestState;
+  entrants: number;
+  problemCount: number;
+  joined: boolean;
+}
+
+export interface StandingRow {
+  rank: number;
+  userId: string;
+  username: string;
+  total: number;
+  solved: number;
+  pending: number;
+  lastImprovementAt: string | null;
+  cells: Record<string, { best: number | null; pending: number }>;
+}
+
+export interface ContestDetail extends Omit<ContestSummary, 'problemCount'> {
+  problemCount: number;
+  serverTime: string;
+  problems: { id: string; slug: string; title: string; difficulty: Difficulty; category: Category; type: ProblemType }[];
+  standings: StandingRow[];
+}

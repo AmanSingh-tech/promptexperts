@@ -4,6 +4,7 @@ import { badRequest, notFound, forbidden, HttpError } from '../lib/http.js';
 import { requireAuth, isStaff } from '../middleware/auth.js';
 import { judge, LANGUAGES } from '../lib/judge.js';
 import { requiredReviews } from '../lib/scoring.js';
+import { contestState, visibleProblemWhere } from '../lib/contests.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -42,7 +43,7 @@ function validateCode(problem, { language, code }) {
 async function loadProblem(problemId) {
   if (!problemId) throw badRequest('problemId is required');
   const problem = await prisma.problem.findFirst({
-    where: { id: problemId, published: true },
+    where: { id: problemId, ...visibleProblemWhere() },
     include: { testCases: { orderBy: { position: 'asc' } } }
   });
   if (!problem) throw notFound('Problem not found');
@@ -86,10 +87,22 @@ router.post('/run', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { problemId, sessionId, language, code } = req.body ?? {};
+  const { problemId, sessionId, language, code, contestId } = req.body ?? {};
   const problem = await loadProblem(problemId);
   validateCode(problem, { language, code });
   if (!sessionId) throw badRequest('sessionId is required');
+
+  if (contestId) {
+    const contest = await prisma.contest.findUnique({
+      where: { id: String(contestId) },
+      include: { problems: { where: { problemId: problem.id } }, entries: { where: { userId: req.user.id } } }
+    });
+    if (!contest) throw badRequest('Contest not found');
+    if (!contest.problems.length) throw badRequest('This problem is not part of that contest');
+    if (!contest.entries.length) throw new HttpError(409, 'Join the contest before submitting');
+    const state = contestState(contest);
+    if (state !== 'LIVE') throw new HttpError(409, state === 'ENDED' ? 'The contest has ended' : 'The contest has not started yet');
+  }
 
   const session = await prisma.aISession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== req.user.id || session.problemId !== problem.id) throw badRequest('Invalid session for this problem');
@@ -128,7 +141,7 @@ router.post('/', async (req, res) => {
   }
 
   const solve = await prisma.solve.create({
-    data: { ...verdict, code, userId: req.user.id, problemId: problem.id, aiSessionId: session.id }
+    data: { ...verdict, code, userId: req.user.id, problemId: problem.id, aiSessionId: session.id, contestId: contestId ? String(contestId) : null }
   });
   await recordEvent(session.id, { type: 'SUBMIT', language: verdict.language, code, verdict: verdict.status });
   res.status(201).json(solve);

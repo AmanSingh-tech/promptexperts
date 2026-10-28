@@ -5,6 +5,7 @@ import { requireAuth, isStaff } from '../middleware/auth.js';
 import { chat } from '../lib/claude.js';
 import { parseTranscript } from '../lib/transcript-parser.js';
 import { MAX_EVENTS_PER_SESSION } from './submissions.js';
+import { visibleProblemWhere } from '../lib/contests.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -30,7 +31,7 @@ function assertActive(session) {
 router.post('/', async (req, res) => {
   const { problemId } = req.body ?? {};
   if (!problemId) throw badRequest('problemId is required');
-  const problem = await prisma.problem.findFirst({ where: { id: problemId, published: true }, select: { id: true } });
+  const problem = await prisma.problem.findFirst({ where: { id: problemId, ...visibleProblemWhere() }, select: { id: true } });
   if (!problem) throw notFound('Problem not found');
 
   const existing = await prisma.aISession.findFirst({

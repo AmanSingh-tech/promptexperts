@@ -46,6 +46,7 @@ export function Navbar() {
 
   const links = [
     { href: '/problems', label: 'Arena' },
+    { href: '/contests', label: 'Contests' },
     { href: '/leaderboard', label: 'Leaderboard' },
     ...(user ? [{ href: '/submissions', label: 'Match history' }] : []),
     ...(isStaff(user) ? [{ href: '/review', label: 'Review' }] : []),

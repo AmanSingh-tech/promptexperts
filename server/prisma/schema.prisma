@@ -89,6 +89,7 @@ model User {
   reviewEntries Review[]
   problems    Problem[]    @relation("ProblemAuthor")
   resetTokens PasswordResetToken[]
+  contestEntries ContestEntry[]
 }
 
 model PasswordResetToken {
@@ -125,6 +126,7 @@ model Problem {
   solves      Solve[]
   aiSessions  AISession[]
   tags        ProblemTag[]
+  contests    ContestProblem[]
 }
 
 model TestCase {
@@ -214,6 +216,7 @@ model Solve {
   userId      String
   problemId   String
   aiSessionId String?     @unique
+  contestId   String?
   language    String
   code        String      @db.Text
   status      SolveStatus
@@ -227,11 +230,53 @@ model Solve {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem     Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
   aiSession   AISession?  @relation(fields: [aiSessionId], references: [id], onDelete: SetNull)
+  contest     Contest?    @relation(fields: [contestId], references: [id], onDelete: SetNull)
   evaluation  Evaluation?
   reviews     Review[]
 
   @@index([userId])
   @@index([problemId])
+  @@index([contestId])
+}
+
+model Contest {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  title       String
+  description String           @db.Text
+  startsAt    DateTime
+  endsAt      DateTime
+  published   Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  problems    ContestProblem[]
+  entries     ContestEntry[]
+  solves      Solve[]
+
+  @@index([startsAt, endsAt])
+}
+
+model ContestProblem {
+  contestId String
+  problemId String
+  position  Int     @default(0)
+
+  contest   Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, problemId])
+}
+
+model ContestEntry {
+  contestId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, userId])
 }
 
 model Evaluation {

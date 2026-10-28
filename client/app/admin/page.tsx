@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, formatDate } from '@/lib/format';
-import type { ProblemSummary, Role, User } from '@/lib/types';
+import type { ContestSummary, ProblemSummary, Role, User } from '@/lib/types';
 import { RequireAuth } from '@/components/RequireAuth';
 import { useAuth } from '@/components/AuthProvider';
 import { Badge, Card, DifficultyBadge, ErrorBox, LinkButton, PageHeader, Spinner, cx } from '@/components/ui';
@@ -16,18 +17,26 @@ type AdminUser = User & { createdAt: string; submissions: number; reviews: numbe
 
 function Admin() {
   const { user: me } = useAuth();
-  const [tab, setTab] = useState<'problems' | 'users'>('problems');
+  const initialTab = useSearchParams().get('tab');
+  const [tab, setTab] = useState<'problems' | 'contests' | 'users'>(initialTab === 'contests' || initialTab === 'users' ? initialTab : 'problems');
+  const [contests, setContests] = useState<ContestSummary[] | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([api<Overview>('/api/admin/overview'), api<ProblemSummary[]>('/api/problems'), api<AdminUser[]>('/api/admin/users')])
-      .then(([o, p, u]) => {
+    Promise.all([
+      api<Overview>('/api/admin/overview'),
+      api<ProblemSummary[]>('/api/problems'),
+      api<AdminUser[]>('/api/admin/users'),
+      api<ContestSummary[]>('/api/contests')
+    ])
+      .then(([o, p, u, c]) => {
         setOverview(o);
         setProblems(p);
         setUsers(u);
+        setContests(c);
       })
       .catch((e) => setError(errorMessage(e)));
   }, []);
@@ -38,6 +47,17 @@ function Admin() {
       await api(`/api/problems/${p.id}`, { method: 'DELETE' });
       setProblems((ps) => ps?.filter((x) => x.id !== p.id) ?? null);
       toast.success(`Deleted “${p.title}”`);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  async function removeContest(c: ContestSummary) {
+    if (!window.confirm(`Delete the contest "${c.title}"? Submissions are kept but no longer linked to it.`)) return;
+    try {
+      await api(`/api/contests/${c.id}`, { method: 'DELETE' });
+      setContests((cs) => cs?.filter((x) => x.id !== c.id) ?? null);
+      toast.success(`Deleted “${c.title}”`);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -65,7 +85,16 @@ function Admin() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader kicker="Control room" title="Admin" actions={<LinkButton href="/admin/problems/new"><Plus className="h-4 w-4" /> New problem</LinkButton>} />
+      <PageHeader
+        kicker="Control room"
+        title="Admin"
+        actions={
+          <>
+            <LinkButton href="/admin/contests/new" variant="secondary"><Plus className="h-4 w-4" /> New contest</LinkButton>
+            <LinkButton href="/admin/problems/new"><Plus className="h-4 w-4" /> New problem</LinkButton>
+          </>
+        }
+      />
       <ErrorBox message={error} />
       {overview && (
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -84,7 +113,7 @@ function Admin() {
         </div>
       )}
       <div className="mb-4 flex gap-2">
-        {(['problems', 'users'] as const).map((t) => (
+        {(['problems', 'contests', 'users'] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={cx('press chamfer-sm px-3 py-1 font-display text-xs font-semibold uppercase tracking-wider', tab === t ? 'bg-neon-400 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white')}>
             {t}
           </button>
@@ -105,6 +134,26 @@ function Admin() {
               <DifficultyBadge value={p.difficulty} />
               <Link href={`/admin/problems/${p.id}`} aria-label={`Edit ${p.title}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><Pencil className="h-4 w-4" /></Link>
               <button onClick={() => remove(p)} aria-label={`Delete ${p.title}`} className="rounded p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          ))}
+        </Card>
+      )}
+      {tab === 'contests' && contests && (
+        <Card className="divide-y divide-slate-800">
+          {!contests.length && <p className="px-4 py-6 text-sm text-slate-400">No contests yet.</p>}
+          {contests.map((c) => (
+            <div key={c.id} className="flex items-center gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  <Link href={`/contests/${c.slug}`} className="hover:underline">{c.title}</Link>
+                  {!c.published && <Badge className="ml-2 border-slate-600 bg-slate-800 text-slate-300">Draft</Badge>}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {c.state.toLowerCase()} · {new Date(c.startsAt).toLocaleString()} → {new Date(c.endsAt).toLocaleString()} · {c.problemCount} challenges · {c.entrants} players
+                </p>
+              </div>
+              <Link href={`/admin/contests/${c.id}`} aria-label={`Edit ${c.title}`} className="rounded p-1.5 text-slate-400 hover:bg-slate-800"><Pencil className="h-4 w-4" /></Link>
+              <button onClick={() => removeContest(c)} aria-label={`Delete ${c.title}`} className="rounded p-1.5 text-slate-400 hover:bg-rose-950/40 hover:text-rose-300"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </Card>
@@ -153,7 +202,9 @@ function Admin() {
 export default function AdminPage() {
   return (
     <RequireAuth roles={['ADMIN']}>
-      <Admin />
+      <Suspense fallback={<Spinner className="mt-24" />}>
+        <Admin />
+      </Suspense>
     </RequireAuth>
   );
 }

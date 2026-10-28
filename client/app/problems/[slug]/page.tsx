@@ -1,13 +1,15 @@
 'use client';
 
-import { use, useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, use, useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Play, RotateCcw, Send, Terminal } from 'lucide-react';
+import { Play, RotateCcw, Send, Terminal, Trophy } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { plural } from '@/lib/game';
-import type { AISession, Language, Problem, RunResult } from '@/lib/types';
+import type { AISession, ContestDetail, Language, Problem, RunResult } from '@/lib/types';
+import { Countdown } from '@/components/Countdown';
 import { RequireAuth } from '@/components/RequireAuth';
 import { useAuth } from '@/components/AuthProvider';
 import { ChatPanel } from '@/components/ChatPanel';
@@ -47,6 +49,8 @@ function clearDrafts(problemId: string) {
 function Workspace({ slug }: { slug: string }) {
   const router = useRouter();
   const { refreshPlayer } = useAuth();
+  const contestSlug = useSearchParams().get('contest');
+  const [contest, setContest] = useState<ContestDetail | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [session, setSession] = useState<AISession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +87,25 @@ function Workspace({ slug }: { slug: string }) {
       }
     })();
   }, [slug, starterFor]);
+
+  const loadContest = useCallback(() => {
+    if (contestSlug) api<ContestDetail>(`/api/contests/${contestSlug}`).then(setContest).catch(() => setContest(null));
+  }, [contestSlug]);
+  useEffect(loadContest, [loadContest]);
+
+  const contestHasProblem = !!contest?.problems.some((p) => p.slug === slug);
+  const countsForContest = !!contest && contest.state === 'LIVE' && contest.joined && contestHasProblem;
+
+  async function joinContest() {
+    if (!contest) return;
+    try {
+      await api(`/api/contests/${contest.slug}/join`, { method: 'POST' });
+      toast.success(`Joined ${contest.title}`, { description: 'Your submissions on this challenge now count.' });
+      loadContest();
+    } catch (err) {
+      setActionError(errorMessage(err));
+    }
+  }
 
   function changeCode(v: string) {
     setCode(v);
@@ -123,7 +146,9 @@ function Workspace({ slug }: { slug: string }) {
   async function submit() {
     if (!problem || !session) return;
     const ok = window.confirm(
-      'Submit this attempt? Your answer and your AI conversation will be locked and sent for review. You can start a new attempt afterwards.'
+      countsForContest
+        ? `Submit this attempt to ${contest!.title}? Your answer and AI conversation will be locked and sent for review. You can submit again before the contest ends; your best reviewed score counts.`
+        : 'Submit this attempt? Your answer and your AI conversation will be locked and sent for review. You can start a new attempt afterwards.'
     );
     if (!ok) return;
     setSubmitting(true);
@@ -131,11 +156,13 @@ function Workspace({ slug }: { slug: string }) {
     try {
       const solve = await api<{ id: string }>('/api/submissions', {
         method: 'POST',
-        body: { problemId: problem.id, sessionId: session.id, language, code }
+        body: { problemId: problem.id, sessionId: session.id, language, code, ...(countsForContest && { contestId: contest!.id }) }
       });
       clearDrafts(problem.id);
       refreshPlayer();
-      toast.success('Submitted', { description: 'Your answer and AI transcript are queued for review.' });
+      toast.success(countsForContest ? `Submitted to ${contest!.title}` : 'Submitted', {
+        description: 'Your answer and AI transcript are queued for review.'
+      });
       router.push(`/submissions/${solve.id}`);
     } catch (err) {
       setActionError(errorMessage(err));
@@ -285,8 +312,34 @@ function Workspace({ slug }: { slug: string }) {
 
   const aiPane = <ChatPanel session={session} onSession={setSession} />;
 
+  const contestBanner = contest && contestHasProblem && (
+    <div
+      className={cx(
+        'flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-sm',
+        countsForContest ? 'border-xp-400/30 bg-xp-400/10 text-xp-100' : 'border-slate-800 bg-slate-900 text-slate-300'
+      )}
+    >
+      <Trophy className={cx('h-4 w-4 shrink-0', countsForContest ? 'text-xp-400' : 'text-slate-500')} aria-hidden />
+      <Link href={`/contests/${contest.slug}`} className="font-display font-bold uppercase tracking-wider hover:underline">{contest.title}</Link>
+      {contest.state === 'LIVE' && contest.joined && (
+        <span>
+          Counts toward standings · ends in <Countdown to={contest.endsAt} onDone={loadContest} className="font-mono tabular-nums text-white" />
+        </span>
+      )}
+      {contest.state === 'LIVE' && !contest.joined && (
+        <>
+          <span>Join to make your submission count.</span>
+          <Button size="sm" onClick={joinContest}>Join contest</Button>
+        </>
+      )}
+      {contest.state === 'ENDED' && <span>This contest has ended, so this run is practice.</span>}
+      {contest.state === 'UPCOMING' && <span>Starts in <Countdown to={contest.startsAt} onDone={loadContest} className="font-mono tabular-nums text-white" /></span>}
+    </div>
+  );
+
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
+      {contestBanner}
       <div className="flex border-b border-slate-200 lg:hidden dark:border-slate-800" role="tablist">
         {(['problem', 'work', 'ai'] as Pane[]).map((p) => (
           <button
@@ -317,7 +370,9 @@ export default function ProblemPage({ params }: { params: Promise<{ slug: string
   const { slug } = use(params);
   return (
     <RequireAuth>
-      <Workspace slug={slug} />
+      <Suspense fallback={<Spinner className="mt-24" />}>
+        <Workspace slug={slug} />
+      </Suspense>
     </RequireAuth>
   );
 }
