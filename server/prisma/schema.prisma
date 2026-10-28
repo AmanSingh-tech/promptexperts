@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  REVIEWER
+  ADMIN
+}
+
+enum ProblemType {
+  CODE
+  WRITTEN
+}
+
+enum Category {
+  ALGORITHMS
+  DATA_STRUCTURES
+  SYSTEM_DESIGN
+  WEB_DEV
+  DEBUGGING
+  OTHER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SessionStatus {
+  ACTIVE
+  SUBMITTED
+  ABANDONED
+}
+
+enum LogRole {
+  USER
+  ASSISTANT
+}
+
+enum LogSource {
+  PLATFORM
+  IMPORTED
+}
+
+enum SolveStatus {
+  ACCEPTED
+  WRONG_ANSWER
+  COMPILE_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT
+  MANUAL_REVIEW
+  JUDGE_ERROR
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  email       String   @unique
+  password    String
+  firstName   String   @default("")
+  lastName    String   @default("")
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  solves      Solve[]
+  aiSessions  AISession[]
+  reviews     Evaluation[] @relation("Reviewer")
+  problems    Problem[]    @relation("ProblemAuthor")
+}
+
+model Problem {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  title       String
+  description String      @db.Text
+  difficulty  Difficulty  @default(EASY)
+  category    Category    @default(ALGORITHMS)
+  type        ProblemType @default(CODE)
+  constraints String?     @db.Text
+  starterCode Json?
+  timeLimitMs Int         @default(2000)
+  published   Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String?
+
+  author      User?       @relation("ProblemAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  testCases   TestCase[]
+  solves      Solve[]
+  aiSessions  AISession[]
+  tags        ProblemTag[]
+}
+
+model TestCase {
+  id             String  @id @default(cuid())
+  problemId      String
+  input          String  @db.Text
+  expectedOutput String  @db.Text
+  isSample       Boolean @default(false)
+  position       Int     @default(0)
+
+  problem        Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+}
+
+model Tag {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  problems ProblemTag[]
+}
+
+model ProblemTag {
+  problemId String
+  tagId     String
+
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
+}
+
+model AISession {
+  id            String        @id @default(cuid())
+  userId        String
+  problemId     String
+  status        SessionStatus @default(ACTIVE)
+  totalMessages Int           @default(0)
+  inputTokens   Int           @default(0)
+  outputTokens  Int           @default(0)
+  runCount      Int           @default(0)
+  startedAt     DateTime      @default(now())
+  endedAt       DateTime?
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem       Problem       @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  logs          AILog[]
+  solve         Solve?
+
+  @@index([userId, problemId, status])
+}
+
+model AILog {
+  id         String    @id @default(cuid())
+  sessionId  String
+  role       LogRole
+  content    String    @db.Text
+  source     LogSource @default(PLATFORM)
+  tool       String?
+  tokensUsed Int?
+  timestamp  DateTime  @default(now())
+
+  session    AISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+}
+
+model Solve {
+  id          String      @id @default(cuid())
+  userId      String
+  problemId   String
+  aiSessionId String?     @unique
+  language    String
+  code        String      @db.Text
+  status      SolveStatus
+  passedCount Int         @default(0)
+  totalCount  Int         @default(0)
+  autoScore   Int?
+  results     Json?
+  autoReview  Json?
+  submittedAt DateTime    @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem     Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  aiSession   AISession?  @relation(fields: [aiSessionId], references: [id], onDelete: SetNull)
+  evaluation  Evaluation?
+
+  @@index([userId])
+  @@index([problemId])
+}
+
+model Evaluation {
+  id             String   @id @default(cuid())
+  solveId        String   @unique
+  reviewerId     String
+  solutionScore  Int
+  aiEfficiency   Int
+  aiLearning     Int
+  aiTransparency Int
+  aiInnovation   Int
+  aiUsageScore   Int
+  finalScore     Int
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  solve          Solve    @relation(fields: [solveId], references: [id], onDelete: Cascade)
+  reviewer       User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,17 @@
+{
+  "name": "ailogracer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Problem-solving platform that scores the solution and how well participants used AI to reach it.",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "setup": "docker-compose up -d db && npm --prefix server run sandbox:build && npm --prefix server run db:deploy && npm --prefix server run db:seed",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "start": "concurrently -n api,web \"npm --prefix server start\" \"npm --prefix client start\"",
+    "test": "npm --prefix server test && npm --prefix server run test:api && npm --prefix client run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}
