@@ -49,6 +49,12 @@ enum LogSource {
   IMPORTED
 }
 
+enum SessionEventType {
+  RUN
+  SUBMIT
+  PASTE
+}
+
 enum SolveStatus {
   ACCEPTED
   WRONG_ANSWER
@@ -144,6 +150,7 @@ model AISession {
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem       Problem       @relation(fields: [problemId], references: [id], onDelete: Cascade)
   logs          AILog[]
+  events        SessionEvent[]
   solve         Solve?
 
   @@index([userId, problemId, status])
@@ -162,6 +169,22 @@ model AILog {
   session    AISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, timestamp])
+}
+
+model SessionEvent {
+  id        String           @id @default(cuid())
+  sessionId String
+  type      SessionEventType
+  language  String?
+  code      String?          @db.Text
+  verdict   String?
+  lines     Int?
+  chars     Int?
+  createdAt DateTime         @default(now())
+
+  session   AISession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
 model Solve {

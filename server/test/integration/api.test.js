@@ -83,11 +83,16 @@ test('full solve -> import -> submit -> review -> leaderboard flow', async () =>
   });
   assert.equal(custom.body.tests[0].stdout.trim(), '0 1');
 
+  const paste = await api('POST', `/api/sessions/${session.body.id}/events`, { token, body: { type: 'PASTE', lines: 12, chars: 300 } });
+  assert.equal(paste.status, 201);
+  assert.equal((await api('POST', `/api/sessions/${session.body.id}/events`, { token, body: { type: 'RUN', lines: 1, chars: 1 } })).status, 400);
+
   const sub = await api('POST', '/api/submissions', {
     token,
     body: { problemId: twoSum.id, language: 'python', code, sessionId: session.body.id }
   });
   assert.equal(sub.status, 201);
+  assert.equal((await api('POST', `/api/sessions/${session.body.id}/events`, { token, body: { type: 'PASTE', lines: 1, chars: 5 } })).status, 409);
   assert.equal(sub.body.status, 'ACCEPTED');
   assert.equal(sub.body.autoScore, 100);
 
@@ -111,8 +116,14 @@ test('full solve -> import -> submit -> review -> leaderboard flow', async () =>
   assert.equal(reviewView.status, 200, 'reviewers can open any submission');
   assert.equal(reviewView.body.aiSession.logs.length, 2);
 
+  const types = reviewView.body.aiSession.events.map((e) => e.type);
+  assert.deepEqual(types, ['RUN', 'PASTE', 'SUBMIT']);
+  assert.equal(reviewView.body.aiSession.events[0].code, code);
+
   const analysis = await api('GET', `/api/evaluations/${sub.body.id}/analysis`, { token: rtoken });
   assert.equal(analysis.body.metrics.promptCount, 1);
+  assert.equal(analysis.body.metrics.process.largePastes, 1);
+  assert.equal(analysis.body.metrics.process.runs, 1);
   assert.equal(analysis.body.metrics.importedLogs, true);
 
   const missingNotes = await api('PUT', `/api/evaluations/${sub.body.id}`, {

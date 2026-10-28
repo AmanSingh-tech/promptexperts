@@ -6,17 +6,20 @@ import { LANGUAGE_LABELS } from '@/lib/format';
 import { Markdown } from './Markdown';
 import { Transcript } from './ChatPanel';
 import { TestResults } from './TestResults';
+import { CodeHistory } from './CodeHistory';
 import { Card, EmptyState, cx } from './ui';
 
-type Tab = 'answer' | 'tests' | 'ai';
+type Tab = 'answer' | 'tests' | 'history' | 'ai';
 
 export function SubmissionTabs({ submission, defaultTab = 'answer' }: { submission: Submission; defaultTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(defaultTab);
   const isCode = submission.problem.type === 'CODE';
   const logs = submission.aiSession?.logs ?? [];
+  const events = submission.aiSession?.events ?? [];
   const tabs: { id: Tab; label: string }[] = [
     { id: 'answer', label: isCode ? `Code · ${LANGUAGE_LABELS[submission.language] ?? submission.language}` : 'Answer' },
     ...(isCode ? [{ id: 'tests' as Tab, label: `Tests · ${submission.passedCount}/${submission.totalCount}` }] : []),
+    ...(events.length ? [{ id: 'history' as Tab, label: `Code history · ${events.filter((e) => e.code != null).length}` }] : []),
     { id: 'ai', label: `AI transcript · ${logs.length}` }
   ];
 
@@ -51,6 +54,7 @@ export function SubmissionTabs({ submission, defaultTab = 'answer' }: { submissi
           ) : (
             <EmptyState title="No test results" />
           ))}
+        {tab === 'history' && <CodeHistory events={events} />}
         {tab === 'ai' &&
           (logs.length ? (
             <div className="max-h-[70vh] overflow-y-auto">

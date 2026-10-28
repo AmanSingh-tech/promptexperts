@@ -1,6 +1,7 @@
 'use client';
 
-import Editor, { type BeforeMount } from '@monaco-editor/react';
+import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react';
+import { useEffect, useRef } from 'react';
 import { Spinner } from './ui';
 
 const defineArenaTheme: BeforeMount = (monaco) => {
@@ -24,9 +25,33 @@ const defineArenaTheme: BeforeMount = (monaco) => {
   });
 };
 
-export function CodeEditor({ language, value, onChange, readOnly }: { language: string; value: string; onChange?: (v: string) => void; readOnly?: boolean }) {
+export function CodeEditor({
+  language,
+  value,
+  onChange,
+  onPaste,
+  readOnly
+}: {
+  language: string;
+  value: string;
+  onChange?: (v: string) => void;
+  onPaste?: (info: { lines: number; chars: number }) => void;
+  readOnly?: boolean;
+}) {
+  // Monaco registers the listener once, so read the latest callback through a ref.
+  const pasteRef = useRef(onPaste);
+  useEffect(() => {
+    pasteRef.current = onPaste;
+  }, [onPaste]);
+  const handleMount: OnMount = (editor) => {
+    editor.onDidPaste((e) => {
+      const text = editor.getModel()?.getValueInRange(e.range) ?? '';
+      pasteRef.current?.({ lines: e.range.endLineNumber - e.range.startLineNumber + 1, chars: text.length });
+    });
+  };
   return (
     <Editor
+      onMount={handleMount}
       height="100%"
       language={language === 'text' ? 'markdown' : language}
       value={value}

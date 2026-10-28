@@ -120,6 +120,11 @@ function Reviewer({ id }: { id: string }) {
               <Metric label="Why/how Qs" value={m.conceptualQuestions ?? 0} />
               <Metric label="Asked for code" value={m.solutionRequests ?? 0} />
               {isCode && <Metric label="Copied code" value={`${m.copyOverlapPct ?? 0}%`} />}
+              {m.process && isCode && <Metric label="Runs" value={m.process.runs} />}
+              {m.process && <Metric label="Large pastes" value={m.process.largePastes} />}
+              {m.process && isCode && (
+                <Metric label="1st run done" value={m.process.firstRunCompletenessPct == null ? '–' : `${m.process.firstRunCompletenessPct}%`} />
+              )}
             </div>
             {(analysis.strengths.length > 0 || analysis.concerns.length > 0) && (
               <ul className="mt-3 space-y-1 text-sm">

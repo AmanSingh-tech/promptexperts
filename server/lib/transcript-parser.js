@@ -46,6 +46,12 @@ function parseJson(raw) {
       .map((m) => ({ role: normalizeRole(m.role ?? m.author?.role ?? m.sender), content: contentToText(m.content ?? m.text).trim() }))
       .filter((m) => m.role && m.content);
   }
+  if (data && Array.isArray(data.chat_messages)) {
+    // Claude.ai export: { name, chat_messages: [{ sender: 'human' | 'assistant', text | content }] }
+    return data.chat_messages
+      .map((m) => ({ role: normalizeRole(m.sender), content: (m.text || contentToText(m.content)).trim() }))
+      .filter((m) => m.role && m.content);
+  }
   if (data && typeof data.mapping === 'object') {
     // ChatGPT export: nodes keyed by id; order by create_time.
     return Object.values(data.mapping)

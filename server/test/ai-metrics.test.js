@@ -40,3 +40,35 @@ test('copy-paste behaviour scores lower on learning than thoughtful use', () => 
 test('copyOverlap ignores braces and comments', () => {
   assert.equal(copyOverlap('}\n// note\n', ['```\n}\n// note\n```']), 0);
 });
+
+test('process analysis flags large pastes and code that appeared complete at once', () => {
+  const finalCode = 'a = read()\nb = parse(a)\nprint(solve(b))\nexit(0)';
+  const r = analyzeSession({
+    logs: [log('USER', 'why is this approach linear?')],
+    events: [
+      { type: 'PASTE', lines: 40, chars: 900 },
+      { type: 'RUN', code: finalCode }
+    ],
+    finalCode,
+    problemType: 'CODE'
+  });
+  assert.equal(r.metrics.process.largePastes, 1);
+  assert.equal(r.metrics.process.firstRunCompletenessPct, 100);
+  assert.ok(r.concerns.some((c) => /large block/.test(c)));
+  assert.ok(r.concerns.some((c) => /first snapshot/.test(c)));
+});
+
+test('incremental work across runs counts as a strength', () => {
+  const finalCode = 'line_one = 1\nline_two = 2\nline_three = 3\nline_four = 4\nprint(line_one)';
+  const r = analyzeSession({
+    logs: [log('USER', 'how should I structure this?')],
+    events: [
+      { type: 'RUN', code: 'line_one = 1' },
+      { type: 'RUN', code: 'line_one = 1\nline_two = 2' },
+      { type: 'RUN', code: finalCode }
+    ],
+    finalCode,
+    problemType: 'CODE'
+  });
+  assert.ok(r.strengths.some((s) => /Built the solution up over 3 runs/.test(s)));
+});

@@ -55,6 +55,17 @@ export interface AILog {
   timestamp: string;
 }
 
+export interface SessionEvent {
+  id: string;
+  type: 'RUN' | 'SUBMIT' | 'PASTE';
+  language: string | null;
+  code: string | null;
+  verdict: string | null;
+  lines: number | null;
+  chars: number | null;
+  createdAt: string;
+}
+
 export interface AISession {
   id: string;
   problemId: string;
@@ -65,6 +76,7 @@ export interface AISession {
   runCount: number;
   startedAt: string;
   logs: AILog[];
+  events?: SessionEvent[];
 }
 
 export interface TestResult {
@@ -156,6 +168,7 @@ export interface Analysis {
     copyOverlapPct?: number;
     durationMinutes?: number;
     importedLogs: boolean;
+    process?: { runs: number; pastes: number; largePastes: number; largestPasteLines: number; firstRunCompletenessPct: number | null };
   };
   suggested: Rubric;
   strengths: string[];

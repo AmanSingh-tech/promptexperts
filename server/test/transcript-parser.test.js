@@ -53,3 +53,17 @@ test('parses ChatGPT export mapping format in time order', () => {
 test('returns nothing for unlabelled text', () => {
   assert.deepEqual(parseTranscript('just some notes without speakers'), []);
 });
+
+test('parses Claude.ai export conversations', () => {
+  const msgs = parseTranscript(JSON.stringify({
+    name: 'Two sum help',
+    chat_messages: [
+      { sender: 'human', text: 'How do I avoid O(n^2)?' },
+      { sender: 'assistant', text: '', content: [{ type: 'text', text: 'Use a hash map.' }] }
+    ]
+  }));
+  assert.deepEqual(msgs, [
+    { role: 'USER', content: 'How do I avoid O(n^2)?' },
+    { role: 'ASSISTANT', content: 'Use a hash map.' }
+  ]);
+});

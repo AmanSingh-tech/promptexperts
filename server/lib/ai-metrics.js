@@ -42,17 +42,56 @@ export function copyOverlap(finalCode, assistantTexts) {
 
 const clamp = (n) => Math.max(1, Math.min(5, Math.round(n)));
 
-export function analyzeSession({ logs, finalCode, problemType }) {
+const LARGE_PASTE_LINES = 8;
+
+function lineOverlap(a, b) {
+  const target = String(b || '').split('\n').map(normalizeLine).filter(significant);
+  if (!target.length) return 0;
+  const have = new Set(String(a || '').split('\n').map(normalizeLine).filter(significant));
+  return target.filter((l) => have.has(l)).length / target.length;
+}
+
+export function analyzeProcess({ events = [], finalCode, problemType }) {
+  const runs = events.filter((e) => e.type === 'RUN');
+  const pastes = events.filter((e) => e.type === 'PASTE');
+  const largePastes = pastes.filter((p) => (p.lines ?? 0) >= LARGE_PASTE_LINES);
+  const firstSnapshot = events.find((e) => (e.type === 'RUN' || e.type === 'SUBMIT') && e.code);
+  const firstRunCompleteness = problemType === 'CODE' && firstSnapshot ? lineOverlap(firstSnapshot.code, finalCode) : null;
+
+  const metrics = {
+    runs: runs.length,
+    pastes: pastes.length,
+    largePastes: largePastes.length,
+    largestPasteLines: pastes.reduce((m, p) => Math.max(m, p.lines ?? 0), 0),
+    firstRunCompletenessPct: firstRunCompleteness == null ? null : Math.round(firstRunCompleteness * 100)
+  };
+
+  const strengths = [];
+  const concerns = [];
+  if (largePastes.length) {
+    concerns.push(`Pasted ${largePastes.length} large block(s) into the editor (largest ${metrics.largestPasteLines} lines).`);
+  }
+  if (problemType === 'CODE' && runs.length >= 3 && (firstRunCompleteness ?? 1) < 0.6) {
+    strengths.push(`Built the solution up over ${runs.length} runs.`);
+  }
+  if (problemType === 'CODE' && firstRunCompleteness != null && firstRunCompleteness >= 0.9 && runs.length <= 1) {
+    concerns.push('The first snapshot already matched the final code almost completely.');
+  }
+  return { metrics, strengths, concerns };
+}
+
+export function analyzeSession({ logs, events = [], finalCode, problemType }) {
+  const process = analyzeProcess({ events, finalCode, problemType });
   const prompts = logs.filter((l) => l.role === 'USER');
   const replies = logs.filter((l) => l.role === 'ASSISTANT');
   const imported = logs.some((l) => l.source === 'IMPORTED');
 
   if (!prompts.length) {
     return {
-      metrics: { promptCount: 0, importedLogs: imported },
+      metrics: { promptCount: 0, importedLogs: imported, process: process.metrics },
       suggested: { aiEfficiency: 1, aiLearning: 1, aiTransparency: 1, aiInnovation: 1 },
-      strengths: [],
-      concerns: ['No AI interaction recorded for this submission.']
+      strengths: process.strengths,
+      concerns: ['No AI interaction recorded for this submission.', ...process.concerns]
     };
   }
 
@@ -115,10 +154,11 @@ export function analyzeSession({ logs, finalCode, problemType }) {
       explorationAreas: exploration,
       copyOverlapPct: Math.round(overlap * 100),
       durationMinutes,
-      importedLogs: imported
+      importedLogs: imported,
+      process: process.metrics
     },
     suggested: { aiEfficiency: efficiency, aiLearning: learning, aiTransparency: transparency, aiInnovation: innovation },
-    strengths,
-    concerns
+    strengths: [...strengths, ...process.strengths],
+    concerns: [...concerns, ...process.concerns]
   };
 }

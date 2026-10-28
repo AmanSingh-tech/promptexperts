@@ -34,7 +34,7 @@ async function loadForAnalysis(solveId) {
     where: { id: solveId },
     include: {
       problem: true,
-      aiSession: { include: { logs: { orderBy: { timestamp: 'asc' } } } }
+      aiSession: { include: { logs: { orderBy: { timestamp: 'asc' } }, events: { orderBy: { createdAt: 'asc' } } } }
     }
   });
   if (!solve) throw notFound('Submission not found');
@@ -45,6 +45,7 @@ router.get('/:solveId/analysis', staffOnly, async (req, res) => {
   const solve = await loadForAnalysis(req.params.solveId);
   const heuristic = analyzeSession({
     logs: solve.aiSession?.logs ?? [],
+    events: solve.aiSession?.events ?? [],
     finalCode: solve.code,
     problemType: solve.problem.type
   });
@@ -54,7 +55,7 @@ router.get('/:solveId/analysis', staffOnly, async (req, res) => {
 router.post('/:solveId/ai-review', staffOnly, async (req, res) => {
   const solve = await loadForAnalysis(req.params.solveId);
   const logs = solve.aiSession?.logs ?? [];
-  const heuristic = analyzeSession({ logs, finalCode: solve.code, problemType: solve.problem.type });
+  const heuristic = analyzeSession({ logs, events: solve.aiSession?.events ?? [], finalCode: solve.code, problemType: solve.problem.type });
   const ai = await reviewAiUsage({ problem: solve.problem, solve, logs, metrics: heuristic.metrics });
   const autoReview = { ai: { ...ai, generatedAt: new Date().toISOString() } };
   await prisma.solve.update({ where: { id: solve.id }, data: { autoReview } });

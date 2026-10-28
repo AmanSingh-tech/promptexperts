@@ -4,6 +4,7 @@ import { badRequest, notFound, forbidden, HttpError } from '../lib/http.js';
 import { requireAuth, isStaff } from '../middleware/auth.js';
 import { chat } from '../lib/claude.js';
 import { parseTranscript } from '../lib/transcript-parser.js';
+import { MAX_EVENTS_PER_SESSION } from './submissions.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -103,6 +104,22 @@ router.post('/:id/import', async (req, res) => {
     prisma.aISession.update({ where: { id: session.id }, data: { totalMessages: { increment: parsed.length } } })
   ]);
   res.status(201).json({ imported: parsed.length, session: await loadSession(req) });
+});
+
+router.post('/:id/events', async (req, res) => {
+  const session = await prisma.aISession.findUnique({ where: { id: req.params.id }, select: { id: true, userId: true, status: true } });
+  if (!session) throw notFound('Session not found');
+  if (session.userId !== req.user.id) throw forbidden();
+  if (session.status !== 'ACTIVE') throw new HttpError(409, 'This session is closed.');
+  const { type, lines, chars } = req.body ?? {};
+  if (type !== 'PASTE') throw badRequest('Only PASTE events can be recorded directly');
+  const n = (v) => (Number.isInteger(v) && v >= 0 && v < 1e7 ? v : null);
+  if (n(lines) == null || n(chars) == null) throw badRequest('lines and chars must be non-negative integers');
+  if ((await prisma.sessionEvent.count({ where: { sessionId: session.id } })) >= MAX_EVENTS_PER_SESSION) {
+    return res.status(202).json({ recorded: false });
+  }
+  await prisma.sessionEvent.create({ data: { sessionId: session.id, type: 'PASTE', lines, chars } });
+  res.status(201).json({ recorded: true });
 });
 
 router.post('/:id/abandon', async (req, res) => {

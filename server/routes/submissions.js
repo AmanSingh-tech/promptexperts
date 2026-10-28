@@ -8,6 +8,13 @@ const router = Router();
 router.use(requireAuth);
 
 const MAX_CODE_CHARS = 100000;
+export const MAX_EVENTS_PER_SESSION = 500;
+
+async function recordEvent(sessionId, data) {
+  const count = await prisma.sessionEvent.count({ where: { sessionId } });
+  if (count >= MAX_EVENTS_PER_SESSION) return;
+  await prisma.sessionEvent.create({ data: { sessionId, ...data } });
+}
 const MAX_JUDGES = Number(process.env.MAX_CONCURRENT_JUDGES || 4);
 let activeJudges = 0;
 const busyUsers = new Set();
@@ -58,10 +65,11 @@ router.post('/run', async (req, res) => {
   );
 
   if (sessionId) {
-    await prisma.aISession.updateMany({
-      where: { id: sessionId, userId: req.user.id, status: 'ACTIVE' },
+    const { count } = await prisma.aISession.updateMany({
+      where: { id: sessionId, userId: req.user.id, problemId: problem.id, status: 'ACTIVE' },
       data: { runCount: { increment: 1 } }
     });
+    if (count) await recordEvent(sessionId, { type: 'RUN', language, code, verdict: custom ? 'CUSTOM_INPUT' : result.status });
   }
 
   res.json({
@@ -121,6 +129,7 @@ router.post('/', async (req, res) => {
   const solve = await prisma.solve.create({
     data: { ...verdict, code, userId: req.user.id, problemId: problem.id, aiSessionId: session.id }
   });
+  await recordEvent(session.id, { type: 'SUBMIT', language: verdict.language, code, verdict: verdict.status });
   res.status(201).json(solve);
 });
 
@@ -144,7 +153,7 @@ router.get('/:id', async (req, res) => {
     include: {
       user: { select: { id: true, username: true } },
       problem: { select: { id: true, slug: true, title: true, type: true, difficulty: true, category: true, description: true } },
-      aiSession: { include: { logs: { orderBy: { timestamp: 'asc' } } } },
+      aiSession: { include: { logs: { orderBy: { timestamp: 'asc' } }, events: { orderBy: { createdAt: 'asc' } } } },
       evaluation: { include: { reviewer: { select: { username: true } } } }
     }
   });

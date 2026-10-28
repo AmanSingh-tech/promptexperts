@@ -89,6 +89,11 @@ function Workspace({ slug }: { slug: string }) {
     if (problem) saveDraft(problem.id, language, v);
   }
 
+  function recordPaste({ lines, chars }: { lines: number; chars: number }) {
+    if (!session || (lines < 2 && chars < 80)) return;
+    api(`/api/sessions/${session.id}/events`, { method: 'POST', body: { type: 'PASTE', lines, chars } }).catch(() => {});
+  }
+
   function changeLanguage(lang: Language) {
     if (!problem) return;
     setLanguage(lang);
@@ -244,7 +249,7 @@ function Workspace({ slug }: { slug: string }) {
 
       <div className="min-h-0 flex-1">
         {isCode || !preview ? (
-          <CodeEditor language={language} value={code} onChange={changeCode} />
+          <CodeEditor language={language} value={code} onChange={changeCode} onPaste={recordPaste} />
         ) : (
           <div className="h-full overflow-y-auto p-4">
             {code.trim() ? <Markdown>{code}</Markdown> : <p className="text-sm text-slate-500">Nothing to preview yet.</p>}
