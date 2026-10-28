@@ -2,28 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Chart series: validated categorical slots for the dark surface. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --chart-grid: #232741;
+  --chart-axis: #a0a6c4;
+}
+
 html {
-  color-scheme: light dark;
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-slate-950 font-sans text-slate-100 antialiased;
+  background-image:
+    radial-gradient(60rem 30rem at 50% -10rem, rgb(130 87 255 / 0.18), transparent 70%),
+    linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: auto, 48px 48px, 48px 48px;
+  background-attachment: fixed;
 }
 
-:root {
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --chart-grid: #e2e8f0;
-  --chart-axis: #64748b;
+h1, h2, h3 {
+  letter-spacing: -0.01em;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --chart-grid: #1e293b;
-    --chart-axis: #94a3b8;
+button, a, [role='tab'], summary {
+  touch-action: manipulation;
+}
+
+@layer components {
+  /* Press feedback for anything clickable: quick, ease-out, never on the transition list for colors. */
+  .press {
+    transition: transform 160ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* Chamfered corners for primary actions and HUD chips. */
+  .chamfer {
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+  .chamfer-sm {
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+
+  /* HUD frame: corner brackets drawn with pseudo-elements. */
+  .hud {
+    position: relative;
+  }
+  .hud::before,
+  .hud::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    border-color: rgb(63 227 242 / 0.7);
+  }
+  .hud::before {
+    top: -1px;
+    left: -1px;
+    border-top: 2px solid;
+    border-left: 2px solid;
+    border-top-left-radius: 12px;
+  }
+  .hud::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 2px solid;
+    border-right: 2px solid;
+    border-bottom-right-radius: 12px;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 24px rgb(130 87 255 / 0.55);
+  }
+
+  /* Modal enter: from 95% scale + transparent, centered origin (modals are not anchored to a trigger). */
+  .modal-panel {
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  }
+  .modal-backdrop {
+    transition: opacity 200ms ease;
+  }
+}
+
+@starting-style {
+  .modal-panel {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  .modal-backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .press:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    .modal-panel {
+      transform: none;
+    }
   }
 }

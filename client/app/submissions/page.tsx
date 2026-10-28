@@ -18,20 +18,20 @@ function Submissions() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <PageHeader title="My submissions" subtitle="Each submission is one attempt: your answer plus the AI conversation behind it." />
+      <PageHeader kicker="Your runs" title="Match history" subtitle="Each run is one attempt: your answer plus the AI conversation behind it." />
       <ErrorBox message={error} />
       {!items && !error && <Spinner className="mt-12" />}
       {items && !items.length && (
-        <EmptyState title="No submissions yet">
-          <Link href="/problems" className="text-brand-600 hover:underline">Pick a problem to start</Link>
+        <EmptyState title="No runs yet">
+          <Link href="/problems" className="text-neon-300 hover:underline">Enter the arena</Link>
         </EmptyState>
       )}
       {items && items.length > 0 && (
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+            <thead className="border-b border-slate-800 text-left font-display text-[11px] uppercase tracking-wider text-slate-400">
               <tr>
-                <th className="px-4 py-3">Problem</th>
+                <th className="px-4 py-3">Challenge</th>
                 <th className="px-4 py-3">Result</th>
                 <th className="px-4 py-3 text-right">AI msgs</th>
                 <th className="px-4 py-3 text-right">Solution</th>
@@ -44,7 +44,7 @@ function Submissions() {
               {items.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <td className="px-4 py-3">
-                    <Link href={`/submissions/${s.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-300">{s.problem.title}</Link>
+                    <Link href={`/submissions/${s.id}`} className="font-semibold text-white hover:text-neon-300">{s.problem.title}</Link>
                   </td>
                   <td className="px-4 py-3"><StatusBadge value={s.status} /></td>
                   <td className="px-4 py-3 text-right tabular-nums">{s.aiSession?.totalMessages ?? 0}</td>

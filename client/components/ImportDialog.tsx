@@ -43,23 +43,23 @@ export function ImportDialog({ sessionId, onClose, onImported }: { sessionId: st
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" onClick={onClose}>
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-title"
-        className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900"
+        className="modal-panel hud w-full max-w-2xl rounded-xl bg-slate-900 p-6 shadow-[0_0_0_1px_rgb(160_166_196_/_0.15),0_24px_80px_-20px_rgb(0_0_0_/_0.8)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
           <div>
-            <h2 id="import-title" className="text-lg font-semibold">Import an external AI conversation</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 id="import-title" className="font-display text-xl font-bold uppercase text-white">Import external AI log</h2>
+            <p className="mt-1 text-sm text-slate-400">
               Paste the full conversation. Label each turn (<code>User:</code>, <code>ChatGPT:</code>, <code>Claude:</code>…) or paste a
               JSON export such as ChatGPT&apos;s <code>conversations.json</code> entry. Imported messages are marked as such for reviewers.
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-slate-700"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label="Close" className="press rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></button>
         </div>
         <div className="mt-4 space-y-4">
           <ErrorBox message={error} />

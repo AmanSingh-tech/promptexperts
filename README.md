@@ -20,10 +20,14 @@ The AI conversation is captured in two ways: a built-in Claude assistant next to
 | Profile | Score trend, rubric averages and a tip for the weakest rubric |
 | Admin | Create/edit problems with hidden and sample tests, starter code and tags; manage user roles (user, reviewer, admin); usage overview including Claude tokens |
 
+## Design
+
+The web app uses a dark, game-style look: the problem list is "the Arena", submissions are runs in a match history, and players earn XP (each player's best final score per challenge, added up). They level up every 100 XP and get a tier (Bronze to Diamond) from their average final score. Motion and interaction follow [Emil Kowalski's design-engineering skills](https://github.com/emilkowalski/skills): strong ease-out curves under 300 ms, `scale(0.97)` press feedback, hover effects only on devices with a real pointer, stagger only on first load, transform/opacity-only animation, `prefers-reduced-motion` support, Sonner toasts and NumberFlow score counters. It also includes the mobile fixes (`100dvh`, 16px inputs, no tap flash).
+
 ## Stack
 
 - **API**: Node 18+, Express 5, Prisma 6, PostgreSQL 16, `@anthropic-ai/sdk` (`server/`)
-- **Web**: Next.js 15 (App Router), React 19, Tailwind CSS 3, Monaco, Recharts (`client/`)
+- **Web**: Next.js 15 (App Router), React 19, Tailwind CSS 3, Monaco, Recharts, Sonner, NumberFlow (`client/`)
 - **Sandbox**: Alpine image with g++, Python 3 and Node (`server/sandbox/`)
 
 ## Getting started

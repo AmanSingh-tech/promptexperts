@@ -15,7 +15,7 @@ function Edit({ id }: { id: string }) {
   }, [id]);
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader title={problem ? `Edit: ${problem.title}` : 'Edit problem'} />
+      <PageHeader kicker="Control room" title={problem ? `Edit: ${problem.title}` : 'Edit challenge'} />
       <ErrorBox message={error} />
       {!problem && !error && <Spinner />}
       {problem && <ProblemForm initial={problem} />}

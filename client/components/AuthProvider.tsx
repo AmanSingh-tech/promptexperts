@@ -2,11 +2,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api, getToken, setToken } from '@/lib/api';
-import type { User } from '@/lib/types';
+import type { MyStats, User } from '@/lib/types';
 
 interface AuthState {
   user: User | null;
   ready: boolean;
+  player: MyStats | null;
+  refreshPlayer: () => void;
   signIn: (token: string, user: User) => void;
   signOut: () => void;
 }
@@ -15,6 +17,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [player, setPlayer] = useState<MyStats | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -27,6 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setToken(null))
       .finally(() => setReady(true));
   }, []);
+
+  const refreshPlayer = useCallback(() => {
+    api<MyStats>('/api/me/stats').then(setPlayer).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (user) refreshPlayer();
+    else setPlayer(null);
+  }, [user, refreshPlayer]);
 
   useEffect(() => {
     const onLogout = () => setUser(null);
@@ -44,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  return <AuthContext.Provider value={{ user, ready, signIn, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, ready, player, refreshPlayer, signIn, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

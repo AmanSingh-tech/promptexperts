@@ -33,8 +33,9 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm p-6">
-      <h1 className="text-xl font-bold">Sign in</h1>
+    <Card hud className="w-full max-w-sm p-7">
+      <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Welcome back</p>
+      <h1 className="font-display text-2xl font-bold uppercase text-white">Player login</h1>
       <form onSubmit={submit} className="mt-5 space-y-4">
         <ErrorBox message={error} />
         <Field label="Username or email">
@@ -46,7 +47,7 @@ function LoginForm() {
         <Button type="submit" loading={loading} className="w-full">Sign in</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">
-        New here? <Link href="/register" className="font-medium text-brand-600 hover:underline">Create an account</Link>
+        New here? <Link href="/register" className="font-semibold text-neon-300 hover:underline">Create an account</Link>
       </p>
     </Card>
   );
@@ -54,7 +55,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="flex justify-center px-4 py-16">
+    <main className="flex justify-center px-4 py-20">
       <Suspense>
         <LoginForm />
       </Suspense>

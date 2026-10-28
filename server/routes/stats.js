@@ -9,8 +9,7 @@ const router = Router();
 
 const avg = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
 
-router.get('/leaderboard', async (req, res) => {
-  const { category, difficulty } = req.query;
+async function computeLeaderboard({ category, difficulty } = {}) {
   const evaluations = await prisma.evaluation.findMany({
     where: {
       solve: {
@@ -40,7 +39,7 @@ router.get('/leaderboard', async (req, res) => {
     users.set(u.userId, u);
   }
 
-  const rows = [...users.values()]
+  return [...users.values()]
     .map(({ entries, ...u }) => ({
       ...u,
       problemsEvaluated: entries.length,
@@ -50,9 +49,11 @@ router.get('/leaderboard', async (req, res) => {
       avgFinalScore: avg(entries.map((e) => e.finalScore))
     }))
     .sort((a, b) => b.totalPoints - a.totalPoints || b.avgAiUsageScore - a.avgAiUsageScore)
-    .slice(0, 100)
     .map((r, i) => ({ rank: i + 1, ...r }));
-  res.json(rows);
+}
+
+router.get('/leaderboard', async (req, res) => {
+  res.json((await computeLeaderboard(req.query)).slice(0, 100));
 });
 
 router.get('/me/stats', requireAuth, async (req, res) => {
@@ -67,7 +68,10 @@ router.get('/me/stats', requireAuth, async (req, res) => {
     }
   });
   const evaluated = solves.filter((s) => s.evaluation);
+  const standing = (await computeLeaderboard()).find((r) => r.userId === req.user.id);
   res.json({
+    totalPoints: standing?.totalPoints ?? 0,
+    rank: standing?.rank ?? null,
     submissions: solves.length,
     problemsAttempted: new Set(solves.map((s) => s.problemId)).size,
     accepted: solves.filter((s) => s.status === 'ACCEPTED').length,

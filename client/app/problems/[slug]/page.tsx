@@ -2,11 +2,14 @@
 
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Play, RotateCcw, Send, Terminal } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, LANGUAGE_LABELS } from '@/lib/format';
+import { plural } from '@/lib/game';
 import type { AISession, Language, Problem, RunResult } from '@/lib/types';
 import { RequireAuth } from '@/components/RequireAuth';
+import { useAuth } from '@/components/AuthProvider';
 import { ChatPanel } from '@/components/ChatPanel';
 import { CodeEditor } from '@/components/CodeEditor';
 import { Markdown } from '@/components/Markdown';
@@ -43,6 +46,7 @@ function clearDrafts(problemId: string) {
 
 function Workspace({ slug }: { slug: string }) {
   const router = useRouter();
+  const { refreshPlayer } = useAuth();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [session, setSession] = useState<AISession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +129,8 @@ function Workspace({ slug }: { slug: string }) {
         body: { problemId: problem.id, sessionId: session.id, language, code }
       });
       clearDrafts(problem.id);
+      refreshPlayer();
+      toast.success('Submitted', { description: 'Your answer and AI transcript are queued for review.' });
       router.push(`/submissions/${solve.id}`);
     } catch (err) {
       setActionError(errorMessage(err));
@@ -156,7 +162,7 @@ function Workspace({ slug }: { slug: string }) {
         <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{CATEGORY_LABELS[problem.category]}</Badge>
         <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{isCode ? 'Code' : 'Written answer'}</Badge>
       </div>
-      <h1 className="mt-3 text-xl font-bold">{problem.title}</h1>
+      <h1 className="mt-3 font-display text-2xl font-bold uppercase leading-tight text-white">{problem.title}</h1>
       <Markdown className="mt-4">{problem.description}</Markdown>
       {problem.constraints && (
         <>
@@ -200,7 +206,7 @@ function Workspace({ slug }: { slug: string }) {
             value={language}
             onChange={(e) => changeLanguage(e.target.value as Language)}
             aria-label="Language"
-            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-base text-slate-100 sm:text-sm"
           >
             {LANGS.map((l) => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
           </select>
@@ -219,7 +225,7 @@ function Workspace({ slug }: { slug: string }) {
         )}
         <span className="text-xs text-slate-500">
           Attempt started {new Date(session.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          {isCode && ` · ${session.runCount} runs`}
+          {isCode && ` · ${plural(session.runCount, 'run')}`}
         </span>
         <div className="ml-auto flex gap-2">
           <Button size="sm" variant="ghost" onClick={newAttempt} title="Discard this attempt and start over">
@@ -261,7 +267,7 @@ function Workspace({ slug }: { slug: string }) {
                   onChange={(e) => setCustomInput(e.target.value)}
                   rows={3}
                   aria-label="Custom input"
-                  className="mt-2 w-full rounded-md border border-slate-300 bg-white p-2 font-mono text-xs dark:border-slate-600 dark:bg-slate-800"
+                  className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 p-2 font-mono text-base sm:text-xs"
                 />
               )}
               {result && <div className="mt-3"><TestResults result={result} /></div>}
@@ -275,7 +281,7 @@ function Workspace({ slug }: { slug: string }) {
   const aiPane = <ChatPanel session={session} onSession={setSession} />;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
       <div className="flex border-b border-slate-200 lg:hidden dark:border-slate-800" role="tablist">
         {(['problem', 'work', 'ai'] as Pane[]).map((p) => (
           <button
@@ -283,20 +289,20 @@ function Workspace({ slug }: { slug: string }) {
             role="tab"
             aria-selected={pane === p}
             onClick={() => setPane(p)}
-            className={cx('flex-1 py-2 text-sm font-medium', pane === p ? 'border-b-2 border-brand-600 text-brand-700 dark:text-brand-300' : 'text-slate-500')}
+            className={cx('press flex-1 py-2.5 font-display text-xs font-bold uppercase tracking-wider', pane === p ? 'border-b-2 border-neon-400 text-white' : 'text-slate-400')}
           >
             {p === 'problem' ? 'Problem' : p === 'work' ? (isCode ? 'Code' : 'Answer') : `AI (${session.logs.length})`}
           </button>
         ))}
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)]">
-        <section className={cx('min-h-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900', pane !== 'problem' && 'hidden lg:block')}>
+        <section className={cx('min-h-0 border-r border-slate-800 bg-slate-950/70', pane !== 'problem' && 'hidden lg:block')}>
           {problemPane}
         </section>
-        <section className={cx('min-h-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900', pane !== 'work' && 'hidden lg:block')}>
+        <section className={cx('min-h-0 border-r border-slate-800 bg-[#0b0c15]', pane !== 'work' && 'hidden lg:block')}>
           {workPane}
         </section>
-        <section className={cx('min-h-0 bg-slate-50 dark:bg-slate-950', pane !== 'ai' && 'hidden lg:block')}>{aiPane}</section>
+        <section className={cx('min-h-0 bg-slate-950/80', pane !== 'ai' && 'hidden lg:block')}>{aiPane}</section>
       </div>
     </div>
   );

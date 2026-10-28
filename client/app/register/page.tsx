@@ -32,9 +32,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex justify-center px-4 py-16">
-      <Card className="w-full max-w-md p-6">
-        <h1 className="text-xl font-bold">Create your account</h1>
+    <main className="flex justify-center px-4 py-20">
+      <Card hud className="w-full max-w-md p-7">
+        <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">New challenger</p>
+        <h1 className="font-display text-2xl font-bold uppercase text-white">Create your player</h1>
         <form onSubmit={submit} className="mt-5 space-y-4">
           <ErrorBox message={error} />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -48,10 +49,10 @@ export default function RegisterPage() {
           <Field label="Password" hint="At least 8 characters">
             <input className={inputClass} type="password" value={form.password} onChange={set('password')} autoComplete="new-password" minLength={8} required />
           </Field>
-          <Button type="submit" loading={loading} className="w-full">Create account</Button>
+          <Button type="submit" loading={loading} className="w-full">Start playing</Button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-500">
-          Already have an account? <Link href="/login" className="font-medium text-brand-600 hover:underline">Sign in</Link>
+          Already have an account? <Link href="/login" className="font-semibold text-neon-300 hover:underline">Sign in</Link>
         </p>
       </Card>
     </main>

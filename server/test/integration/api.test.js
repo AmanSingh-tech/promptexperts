@@ -141,6 +141,8 @@ test('full solve -> import -> submit -> review -> leaderboard flow', async () =>
   const stats = await api('GET', '/api/me/stats', { token });
   assert.equal(stats.body.evaluated, 1);
   assert.equal(stats.body.rubric.aiEfficiency, 4);
+  assert.equal(stats.body.totalPoints, 78);
+  assert.ok(stats.body.rank >= 1);
 });
 
 test('written problems need a reviewer-assigned solution score', async () => {

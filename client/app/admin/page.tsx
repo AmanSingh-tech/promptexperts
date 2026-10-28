@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, formatDate } from '@/lib/format';
 import type { ProblemSummary, Role, User } from '@/lib/types';
@@ -36,6 +37,7 @@ function Admin() {
     try {
       await api(`/api/problems/${p.id}`, { method: 'DELETE' });
       setProblems((ps) => ps?.filter((x) => x.id !== p.id) ?? null);
+      toast.success(`Deleted “${p.title}”`);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -45,6 +47,7 @@ function Admin() {
     try {
       const updated = await api<User>(`/api/admin/users/${u.id}/role`, { method: 'PATCH', body: { role } });
       setUsers((us) => us?.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x)) ?? null);
+      toast.success(`${u.username} is now ${updated.role.toLowerCase()}`);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -52,7 +55,7 @@ function Admin() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader title="Admin" actions={<LinkButton href="/admin/problems/new"><Plus className="h-4 w-4" /> New problem</LinkButton>} />
+      <PageHeader kicker="Control room" title="Admin" actions={<LinkButton href="/admin/problems/new"><Plus className="h-4 w-4" /> New problem</LinkButton>} />
       <ErrorBox message={error} />
       {overview && (
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -64,15 +67,15 @@ function Admin() {
             ['Claude tokens', (overview.inputTokens + overview.outputTokens).toLocaleString()]
           ].map(([k, v]) => (
             <Card key={k as string} className="p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">{k}</p>
-              <p className="mt-1 text-xl font-bold tabular-nums">{v}</p>
+              <p className="font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">{k}</p>
+              <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-white">{v}</p>
             </Card>
           ))}
         </div>
       )}
       <div className="mb-4 flex gap-2">
         {(['problems', 'users'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={cx('rounded-full px-3 py-1 text-sm capitalize', tab === t ? 'bg-brand-600 text-white' : 'border border-slate-300 dark:border-slate-700')}>
+          <button key={t} onClick={() => setTab(t)} className={cx('press chamfer-sm px-3 py-1 font-display text-xs font-semibold uppercase tracking-wider', tab === t ? 'bg-neon-400 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white')}>
             {t}
           </button>
         ))}
@@ -99,7 +102,7 @@ function Admin() {
       {tab === 'users' && users && (
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800">
+            <thead className="border-b border-slate-800 text-left font-display text-[11px] uppercase tracking-wider text-slate-400">
               <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Submissions</th><th className="px-4 py-3 text-right">Reviews</th><th className="px-4 py-3">Role</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -115,7 +118,7 @@ function Admin() {
                       disabled={u.id === me?.id}
                       onChange={(e) => setRole(u, e.target.value as Role)}
                       aria-label={`Role for ${u.username}`}
-                      className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800"
+                      className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-base text-slate-100 disabled:opacity-60 sm:text-sm"
                     >
                       <option value="USER">User</option>
                       <option value="REVIEWER">Reviewer</option>

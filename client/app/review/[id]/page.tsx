@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { RUBRIC, formatDate } from '@/lib/format';
@@ -70,6 +71,7 @@ function Reviewer({ id }: { id: string }) {
         method: 'PUT',
         body: { ...rubric, notes, ...(s.problem.type === 'WRITTEN' && { solutionScore }) }
       });
+      toast.success('Review saved', { description: `Final score ${final}. The player can see it now.` });
       router.push('/review');
     } catch (e) {
       setError(errorMessage(e));
@@ -89,8 +91,8 @@ function Reviewer({ id }: { id: string }) {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6">
-        <Link href="/review" className="text-sm text-slate-500 hover:underline">← Review queue</Link>
-        <h1 className="mt-1 text-2xl font-bold">{s.problem.title}</h1>
+        <Link href="/review" className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400 hover:text-neon-300">← Review queue</Link>
+        <h1 className="mt-1 font-display text-3xl font-bold uppercase text-white">{s.problem.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <DifficultyBadge value={s.problem.difficulty} />
           <StatusBadge value={s.status} />
@@ -98,7 +100,7 @@ function Reviewer({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
           <SubmissionTabs submission={s} defaultTab="ai" />
           <details className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
@@ -109,7 +111,7 @@ function Reviewer({ id }: { id: string }) {
 
         <div className="space-y-4">
           <Card className="p-5">
-            <h2 className="font-semibold">Automatic analysis</h2>
+            <h2 className="font-display text-lg font-bold uppercase text-white">Automatic analysis</h2>
             <p className="text-xs text-slate-500">Heuristics from the transcript. Use them as hints, not verdicts.</p>
             <div className="mt-3 grid grid-cols-3 gap-2">
               <Metric label="Prompts" value={m.promptCount} />
@@ -122,14 +124,14 @@ function Reviewer({ id }: { id: string }) {
             {(analysis.strengths.length > 0 || analysis.concerns.length > 0) && (
               <ul className="mt-3 space-y-1 text-sm">
                 {analysis.strengths.map((f) => (
-                  <li key={f} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-label="Strength" />{f}</li>
+                  <li key={f} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-xp-400" aria-label="Strength" />{f}</li>
                 ))}
                 {analysis.concerns.map((f) => (
                   <li key={f} className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-label="Concern" />{f}</li>
                 ))}
               </ul>
             )}
-            {analysis.metrics.importedLogs && <p className="mt-2 text-xs text-violet-700 dark:text-violet-300">Includes a transcript imported from an external AI tool.</p>}
+            {analysis.metrics.importedLogs && <p className="mt-2 text-xs text-brand-200">Includes a transcript imported from an external AI tool.</p>}
             <p className="mt-3 text-xs text-slate-500">
               Suggested: {RUBRIC.map((r) => `${r.label} ${analysis.suggested[r.key]}`).join(' · ')}
             </p>
@@ -137,7 +139,7 @@ function Reviewer({ id }: { id: string }) {
 
           <Card className="p-5">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-brand-500" /> Claude&apos;s second opinion</h2>
+              <h2 className="flex items-center gap-2 font-display text-lg font-bold uppercase text-white"><Sparkles className="h-4 w-4 text-neon-400" /> Claude&apos;s take</h2>
               <Button size="sm" variant="secondary" onClick={askClaude} loading={aiLoading}>{analysis.ai ? 'Regenerate' : 'Generate'}</Button>
             </div>
             <ErrorBox message={aiError} />
@@ -146,10 +148,10 @@ function Reviewer({ id }: { id: string }) {
                 <p className="text-xs text-slate-500">{RUBRIC.map((r) => `${r.label} ${analysis.ai![r.key]}`).join(' · ')}</p>
                 <p>{analysis.ai.rationale}</p>
                 {analysis.ai.strengths.length > 0 && (
-                  <ul className="list-disc pl-5 text-emerald-700 dark:text-emerald-400">{analysis.ai.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
+                  <ul className="list-disc pl-5 text-xp-300">{analysis.ai.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
                 )}
                 {analysis.ai.concerns.length > 0 && (
-                  <ul className="list-disc pl-5 text-rose-700 dark:text-rose-400">{analysis.ai.concerns.map((x) => <li key={x}>{x}</li>)}</ul>
+                  <ul className="list-disc pl-5 text-rose-300">{analysis.ai.concerns.map((x) => <li key={x}>{x}</li>)}</ul>
                 )}
                 <Button
                   size="sm"
@@ -165,17 +167,17 @@ function Reviewer({ id }: { id: string }) {
           </Card>
 
           <Card className="p-5">
-            <h2 className="font-semibold">Your scores</h2>
+            <h2 className="font-display text-lg font-bold uppercase text-white">Your scores</h2>
             <div className="mt-4 space-y-4">
               {!isCode && (
                 <Field label={`Solution quality: ${solutionScore}/100`} hint="Written answers are graded by you">
-                  <input type="range" min={0} max={100} value={solutionScore} onChange={(e) => setSolutionScore(Number(e.target.value))} className="w-full accent-brand-600" />
+                  <input type="range" min={0} max={100} value={solutionScore} onChange={(e) => setSolutionScore(Number(e.target.value))} className="w-full accent-neon-400" />
                 </Field>
               )}
               {isCode && <p className="text-sm text-slate-500">Solution score is set by the tests: <strong>{solution}</strong>/100</p>}
               {RUBRIC.map((r) => (
                 <div key={r.key}>
-                  <p className="text-sm font-medium">{r.label}</p>
+                  <p className="font-display text-sm font-bold uppercase tracking-wider text-slate-100">{r.label}</p>
                   <p className="text-xs text-slate-500">{r.hint}</p>
                   <div className="mt-1.5 grid grid-cols-5 gap-1" role="radiogroup" aria-label={r.label}>
                     {[1, 2, 3, 4, 5].map((v) => (
@@ -185,8 +187,8 @@ function Reviewer({ id }: { id: string }) {
                         aria-checked={rubric[r.key] === v}
                         onClick={() => setRubric({ ...rubric, [r.key]: v })}
                         className={cx(
-                          'rounded-md py-1.5 text-sm font-semibold',
-                          rubric[r.key] === v ? 'bg-brand-600 text-white' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700'
+                          'press chamfer-sm py-1.5 font-mono text-sm font-semibold',
+                          rubric[r.key] === v ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_0_16px_-4px_rgb(130_87_255_/_0.8)]' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         )}
                       >
                         {v}

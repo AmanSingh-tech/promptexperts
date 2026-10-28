@@ -6,6 +6,7 @@ import { api, errorMessage } from '@/lib/api';
 import type { AILog, AISession } from '@/lib/types';
 import { Markdown } from './Markdown';
 import { ImportDialog } from './ImportDialog';
+import { toast } from 'sonner';
 import { Badge, Button, ErrorBox, cx } from './ui';
 
 export function Transcript({ logs, pending }: { logs: AILog[]; pending?: string | null }) {
@@ -33,7 +34,7 @@ function Message({ log }: { log: AILog }) {
       <span
         className={cx(
           'mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full',
-          mine ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+          mine ? 'bg-brand-500/20 text-brand-200' : 'bg-neon-400/15 text-neon-300'
         )}
         aria-hidden
       >
@@ -41,12 +42,12 @@ function Message({ log }: { log: AILog }) {
       </span>
       <div className={cx('min-w-0 max-w-[85%] space-y-1', mine && 'text-right')}>
         {log.source === 'IMPORTED' && (
-          <Badge className="bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300">Imported · {log.tool}</Badge>
+          <Badge className="border-brand-400/30 bg-brand-500/10 text-brand-200">Imported · {log.tool}</Badge>
         )}
         <div
           className={cx(
             'rounded-2xl px-3.5 py-2.5 text-left',
-            mine ? 'bg-brand-600 text-white' : 'border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800'
+            mine ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white' : 'bg-slate-900 shadow-[0_0_0_1px_rgb(160_166_196_/_0.14)]'
           )}
         >
           {mine ? <p className="whitespace-pre-wrap break-words text-sm">{log.content}</p> : <Markdown>{log.content}</Markdown>}
@@ -92,8 +93,10 @@ export function ChatPanel({ session, onSession }: { session: AISession; onSessio
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5 dark:border-slate-800">
         <div>
-          <h2 className="text-sm font-semibold">AI assistant</h2>
-          <p className="text-xs text-slate-500">Everything here is recorded and reviewed</p>
+          <h2 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wider text-white">
+            <span className="h-2 w-2 rounded-full bg-xp-400 shadow-[0_0_8px_rgb(189_240_67)]" aria-hidden /> AI copilot
+          </h2>
+          <p className="text-xs text-slate-400">Recorded and reviewed · {Math.ceil(session.logs.length / 2)} exchanges</p>
         </div>
         <Button size="sm" variant="secondary" onClick={() => setImportOpen(true)} disabled={!active} title="Import a conversation from another AI tool">
           <Import className="h-4 w-4" /> Import
@@ -103,8 +106,8 @@ export function ChatPanel({ session, onSession }: { session: AISession; onSessio
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {session.logs.length === 0 && !pending ? (
           <div className="mx-auto mt-8 max-w-xs text-center text-sm text-slate-500">
-            <Bot className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-            <p className="font-medium text-slate-700 dark:text-slate-200">Ask Claude anything about this problem.</p>
+            <Bot className="mx-auto mb-3 h-8 w-8 text-neon-400" />
+            <p className="font-display font-bold uppercase tracking-wide text-slate-100">Your copilot is ready</p>
             <p className="mt-2">
               Reviewers reward specific questions, your own reasoning, and using AI to test and compare ideas. Used another
               tool? Import that conversation too.
@@ -132,7 +135,7 @@ export function ChatPanel({ session, onSession }: { session: AISession; onSessio
             disabled={!active}
             placeholder={active ? 'Ask a question. Enter to send, Shift+Enter for a new line.' : 'This attempt has been submitted.'}
             aria-label="Message the AI assistant"
-            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800"
+            className="min-h-[2.5rem] flex-1 resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-neon-400/60 focus:outline-none focus:ring-2 focus:ring-neon-400/20 sm:text-sm"
           />
           <Button onClick={send} loading={!!pending} disabled={!active || !input.trim()} aria-label="Send message">
             {!pending && <Send className="h-4 w-4" />}
@@ -140,7 +143,16 @@ export function ChatPanel({ session, onSession }: { session: AISession; onSessio
         </div>
       </div>
 
-      {importOpen && <ImportDialog sessionId={session.id} onClose={() => setImportOpen(false)} onImported={onSession} />}
+      {importOpen && (
+        <ImportDialog
+          sessionId={session.id}
+          onClose={() => setImportOpen(false)}
+          onImported={(s) => {
+            toast.success('Transcript imported', { description: `${s.logs.length - session.logs.length} messages added to this attempt.` });
+            onSession(s);
+          }}
+        />
+      )}
     </div>
   );
 }

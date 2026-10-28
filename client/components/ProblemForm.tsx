@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import type { Category, Difficulty, Language, Problem, ProblemType } from '@/lib/types';
@@ -47,6 +48,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
     try {
       if (initial) await api(`/api/problems/${initial.id}`, { method: 'PATCH', body });
       else await api('/api/problems', { method: 'POST', body });
+      toast.success(initial ? 'Challenge updated' : 'Challenge created', { description: title });
       router.push('/admin');
     } catch (err) {
       setError(errorMessage(err));
@@ -79,7 +81,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
         <div>
           <div className="mb-1 flex items-center justify-between">
             <span className="text-sm font-medium">Description (Markdown)</span>
-            <button type="button" className="text-xs text-brand-600" onClick={() => setPreview(!preview)}>{preview ? 'Edit' : 'Preview'}</button>
+            <button type="button" className="font-display text-xs font-semibold uppercase tracking-wider text-neon-300" onClick={() => setPreview(!preview)}>{preview ? 'Edit' : 'Preview'}</button>
           </div>
           {preview ? (
             <div className="min-h-[12rem] rounded-lg border border-slate-200 p-3 dark:border-slate-700"><Markdown>{description || '_Nothing yet_'}</Markdown></div>
@@ -106,7 +108,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-semibold">Test cases</h2>
+                <h2 className="font-display text-lg font-bold uppercase text-white">Test cases</h2>
                 <p className="text-xs text-slate-500">Samples are shown to participants; the rest stay hidden. Output is compared ignoring trailing whitespace.</p>
               </div>
               <Button type="button" size="sm" variant="secondary" onClick={() => setTests([...tests, { input: '', expectedOutput: '', isSample: false }])}>
@@ -114,7 +116,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
               </Button>
             </div>
             {tests.map((t, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+              <div key={i} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-medium">Test {i + 1}</span>
                   <div className="flex items-center gap-3">
@@ -132,7 +134,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
             ))}
           </Card>
           <Card className="space-y-4 p-5">
-            <h2 className="font-semibold">Starter code (optional)</h2>
+            <h2 className="font-display text-lg font-bold uppercase text-white">Starter code (optional)</h2>
             {LANGS.map((l) => (
               <Field key={l} label={LANGUAGE_LABELS[l]}>
                 <textarea className={`${inputClass} h-28 font-mono text-xs`} value={starter[l] ?? ''} onChange={(e) => setStarter({ ...starter, [l]: e.target.value })} />

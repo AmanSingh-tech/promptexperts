@@ -175,6 +175,8 @@ export interface LeaderboardRow {
 }
 
 export interface MyStats {
+  totalPoints: number;
+  rank: number | null;
   submissions: number;
   problemsAttempted: number;
   accepted: number;
