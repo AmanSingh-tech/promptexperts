@@ -53,11 +53,16 @@ function SubmissionDetail({ id }: { id: string }) {
         <SubmissionTabs submission={s} />
         <div>
           {s.evaluation ? (
-            <ScoreCard evaluation={s.evaluation} />
+            <ScoreCard evaluation={s.evaluation} reviews={s.reviews} />
           ) : (
             <Card hud className="p-5 text-sm">
               <Hourglass className="mb-3 h-6 w-6 text-neon-400" />
               <p className="font-display text-lg font-bold uppercase text-white">Awaiting review</p>
+              {s.reviewProgress.required > 1 && (
+                <p className="mt-1 font-mono text-xs text-neon-300">
+                  {Math.min(s.reviewProgress.count, s.reviewProgress.required)} of {s.reviewProgress.required} reviews done
+                </p>
+              )}
               <p className="mt-2 text-slate-400">
                 A reviewer will score your AI usage on efficiency, learning, transparency and innovation.
                 {s.problem.type === 'CODE'

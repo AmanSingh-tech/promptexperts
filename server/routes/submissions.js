@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { badRequest, notFound, forbidden, HttpError } from '../lib/http.js';
 import { requireAuth, isStaff } from '../middleware/auth.js';
 import { judge, LANGUAGES } from '../lib/judge.js';
+import { requiredReviews } from '../lib/scoring.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -140,11 +141,11 @@ router.get('/mine', async (req, res) => {
     select: {
       id: true, status: true, language: true, passedCount: true, totalCount: true, autoScore: true, submittedAt: true,
       problem: { select: { id: true, slug: true, title: true, type: true, difficulty: true } },
-      evaluation: { select: { finalScore: true, aiUsageScore: true, solutionScore: true } },
+      evaluation: { select: { finalScore: true, aiUsageScore: true, solutionScore: true, status: true } },
       aiSession: { select: { totalMessages: true } }
     }
   });
-  res.json(solves);
+  res.json(solves.map((s) => (s.evaluation?.status === 'FINAL' ? s : { ...s, evaluation: null })));
 });
 
 router.get('/:id', async (req, res) => {
@@ -154,12 +155,28 @@ router.get('/:id', async (req, res) => {
       user: { select: { id: true, username: true } },
       problem: { select: { id: true, slug: true, title: true, type: true, difficulty: true, category: true, description: true } },
       aiSession: { include: { logs: { orderBy: { timestamp: 'asc' } }, events: { orderBy: { createdAt: 'asc' } } } },
-      evaluation: { include: { reviewer: { select: { username: true } } } }
+      evaluation: { include: { reviewer: { select: { username: true } } } },
+      reviews: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true, solutionScore: true, aiEfficiency: true, aiLearning: true, aiTransparency: true, aiInnovation: true,
+          notes: true, updatedAt: true, reviewer: { select: { username: true } }
+        }
+      }
     }
   });
   if (!solve) throw notFound('Submission not found');
   const staff = isStaff(req.user);
   if (solve.userId !== req.user.id && !staff) throw forbidden();
+
+  solve.reviewProgress = { count: solve.reviews.length, required: requiredReviews() };
+  if (staff) {
+    // Staff fetch other reviewers' scores through the blind-review endpoint instead.
+    solve.reviews = [];
+  } else if (solve.evaluation?.status !== 'FINAL') {
+    solve.evaluation = null;
+    solve.reviews = [];
+  }
 
   if (!staff) {
     delete solve.autoReview;

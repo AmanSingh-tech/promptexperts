@@ -17,6 +17,7 @@ async function computeLeaderboard({ category, difficulty, period, board = 'xp' }
   const days = PERIOD_DAYS[period];
   const evaluations = await prisma.evaluation.findMany({
     where: {
+      status: 'FINAL',
       solve: {
         ...(days && { submittedAt: { gte: new Date(Date.now() - days * 86400000) } }),
         problem: {
@@ -91,6 +92,7 @@ async function playerStats(userId) {
       evaluation: true
     }
   });
+  for (const s of solves) if (s.evaluation?.status !== 'FINAL') s.evaluation = null;
   const evaluated = solves.filter((s) => s.evaluation);
   const standing = (await computeLeaderboard()).find((r) => r.userId === userId);
 
@@ -172,7 +174,7 @@ router.get('/admin/overview', adminOnly, async (req, res) => {
     prisma.user.count(),
     prisma.problem.count(),
     prisma.solve.count(),
-    prisma.solve.count({ where: { evaluation: { is: null } } }),
+    prisma.solve.count({ where: { OR: [{ evaluation: { is: null } }, { evaluation: { is: { status: { not: 'FINAL' } } } }] } }),
     prisma.aISession.count(),
     prisma.aISession.aggregate({ _sum: { inputTokens: true, outputTokens: true } })
   ]);

@@ -249,7 +249,7 @@ function Workspace({ slug }: { slug: string }) {
 
       <div className="min-h-0 flex-1">
         {isCode || !preview ? (
-          <CodeEditor language={language} value={code} onChange={changeCode} onPaste={recordPaste} />
+          <CodeEditor key={language} language={language} value={code} onChange={changeCode} onPaste={recordPaste} />
         ) : (
           <div className="h-full overflow-y-auto p-4">
             {code.trim() ? <Markdown>{code}</Markdown> : <p className="text-sm text-slate-500">Nothing to preview yet.</p>}

@@ -1,5 +1,5 @@
 import { Brain, Eye, Lightbulb, Target } from 'lucide-react';
-import type { Evaluation } from '@/lib/types';
+import type { Evaluation, Review } from '@/lib/types';
 import { RUBRIC } from '@/lib/format';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Card, cx, scoreTone } from './ui';
@@ -39,7 +39,7 @@ export function RubricBars({ values }: { values: Partial<Record<(typeof RUBRIC)[
   );
 }
 
-export function ScoreCard({ evaluation }: { evaluation: Evaluation }) {
+export function ScoreCard({ evaluation, reviews = [] }: { evaluation: Evaluation; reviews?: Review[] }) {
   return (
     <Card hud className="p-5">
       <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Match result</p>
@@ -65,12 +65,27 @@ export function ScoreCard({ evaluation }: { evaluation: Evaluation }) {
       <div className="mt-6">
         <RubricBars values={evaluation} />
       </div>
-      {evaluation.notes && (
-        <div className="mt-6 rounded-lg border-l-2 border-neon-400 bg-slate-950/70 p-3 text-sm">
-          <p className="mb-1 font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">Reviewer notes{evaluation.reviewer && ` · ${evaluation.reviewer.username}`}</p>
-          <p className="whitespace-pre-wrap text-slate-200">{evaluation.notes}</p>
-        </div>
+      {reviews.length > 1 && (
+        <p className="mt-6 font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          Averaged from {reviews.length} independent reviews
+        </p>
       )}
+      {reviews.length > 0
+        ? reviews.map((r) => (
+            <div key={r.id} className="mt-3 rounded-lg border-l-2 border-neon-400 bg-slate-950/70 p-3 text-sm">
+              <p className="mb-1 flex justify-between font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <span>Reviewer notes · {r.reviewer.username}</span>
+                {reviews.length > 1 && <span className="font-mono normal-case">{[r.aiEfficiency, r.aiLearning, r.aiTransparency, r.aiInnovation].join(' · ')}</span>}
+              </p>
+              <p className="whitespace-pre-wrap text-slate-200">{r.notes}</p>
+            </div>
+          ))
+        : evaluation.notes && (
+            <div className="mt-6 rounded-lg border-l-2 border-neon-400 bg-slate-950/70 p-3 text-sm">
+              <p className="mb-1 font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">Reviewer notes{evaluation.reviewer && ` · ${evaluation.reviewer.username}`}</p>
+              <p className="whitespace-pre-wrap text-slate-200">{evaluation.notes}</p>
+            </div>
+          )}
     </Card>
   );
 }

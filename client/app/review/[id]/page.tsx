@@ -4,10 +4,13 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, EyeOff, Sparkles, Users } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { RUBRIC, formatDate } from '@/lib/format';
-import type { Analysis, Rubric, Submission } from '@/lib/types';
+import { RUBRIC_GUIDE } from '@/lib/rubric-guide';
+import type { Analysis, Evaluation, Rubric, ReviewsResponse, Submission } from '@/lib/types';
+import { useAuth } from '@/components/AuthProvider';
+import { RubricAnchors } from '@/components/RubricGuide';
 import { RequireAuth } from '@/components/RequireAuth';
 import { SubmissionTabs } from '@/components/SubmissionView';
 import { Button, Card, DifficultyBadge, ErrorBox, Field, ScorePill, Spinner, StatusBadge, cx, inputClass } from '@/components/ui';
@@ -16,16 +19,20 @@ const usageScore = (r: Rubric) => Math.round(((RUBRIC.reduce((a, k) => a + r[k.k
 
 function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="font-semibold tabular-nums">{value}</p>
+    <div className="rounded-lg bg-slate-950/60 px-3 py-2">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="font-mono font-semibold tabular-nums text-white">{value}</p>
     </div>
   );
 }
 
 function Reviewer({ id }: { id: string }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [s, setS] = useState<Submission | null>(null);
+  const [reviews, setReviews] = useState<ReviewsResponse | null>(null);
+  const [guideFor, setGuideFor] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [solutionScore, setSolutionScore] = useState(50);
@@ -36,15 +43,20 @@ function Reviewer({ id }: { id: string }) {
   const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([api<Submission>(`/api/submissions/${id}`), api<Analysis>(`/api/evaluations/${id}/analysis`)])
-      .then(([sub, an]) => {
+    Promise.all([
+      api<Submission>(`/api/submissions/${id}`),
+      api<Analysis>(`/api/evaluations/${id}/analysis`),
+      api<ReviewsResponse>(`/api/evaluations/${id}/reviews`)
+    ])
+      .then(([sub, an, rv]) => {
         setS(sub);
         setAnalysis(an);
-        const e = sub.evaluation;
-        setRubric(e ? { aiEfficiency: e.aiEfficiency, aiLearning: e.aiLearning, aiTransparency: e.aiTransparency, aiInnovation: e.aiInnovation } : an.suggested);
-        if (e) {
-          setSolutionScore(e.solutionScore);
-          setNotes(e.notes ?? '');
+        setReviews(rv);
+        const mine = rv.mine;
+        setRubric(mine ? { aiEfficiency: mine.aiEfficiency, aiLearning: mine.aiLearning, aiTransparency: mine.aiTransparency, aiInnovation: mine.aiInnovation } : an.suggested);
+        if (mine) {
+          setSolutionScore(mine.solutionScore ?? 50);
+          setNotes(mine.notes);
         }
       })
       .catch((e) => setError(errorMessage(e)));
@@ -67,11 +79,14 @@ function Reviewer({ id }: { id: string }) {
     setSaving(true);
     setError(null);
     try {
-      await api(`/api/evaluations/${id}`, {
+      const result = await api<Evaluation>(`/api/evaluations/${id}`, {
         method: 'PUT',
         body: { ...rubric, notes, ...(s.problem.type === 'WRITTEN' && { solutionScore }) }
       });
-      toast.success('Review saved', { description: `Final score ${final}. The player can see it now.` });
+      const remaining = (reviews?.requiredReviews ?? 1) - result.reviewCount;
+      if (result.status === 'FINAL') toast.success('Review saved', { description: `Final score ${result.finalScore}. The player can see it now.` });
+      else if (result.status === 'PENDING') toast.success('Review saved', { description: `Waiting for ${remaining} more review${remaining === 1 ? '' : 's'} before the result is final.` });
+      else toast.warning('Reviewers disagree', { description: 'The result is disputed until an admin accepts it or adds a deciding review.' });
       router.push('/review');
     } catch (e) {
       setError(errorMessage(e));
@@ -79,8 +94,22 @@ function Reviewer({ id }: { id: string }) {
     }
   }
 
+  async function accept() {
+    setAccepting(true);
+    try {
+      const evaluation = await api<Evaluation>(`/api/evaluations/${id}/accept`, { method: 'POST' });
+      setReviews((r) => (r ? { ...r, evaluation } : r));
+      toast.success('Result accepted', { description: `Final score ${evaluation.finalScore}.` });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setAccepting(false);
+    }
+  }
+
   if (error && !s) return <div className="mx-auto mt-12 max-w-xl px-4"><ErrorBox message={error} /></div>;
-  if (!s || !analysis || !rubric) return <Spinner className="mt-24" />;
+  if (!s || !analysis || !rubric || !reviews) return <Spinner className="mt-24" />;
+  const ownSubmission = s.user.id === user?.id;
 
   const isCode = s.problem.type === 'CODE';
   const solution = isCode ? s.autoScore ?? 0 : solutionScore;
@@ -93,19 +122,23 @@ function Reviewer({ id }: { id: string }) {
       <div className="mb-6">
         <Link href="/review" className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400 hover:text-neon-300">← Review queue</Link>
         <h1 className="mt-1 font-display text-3xl font-bold uppercase text-white">{s.problem.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-400">
           <DifficultyBadge value={s.problem.difficulty} />
           <StatusBadge value={s.status} />
-          <span>by <strong className="text-slate-700 dark:text-slate-200">{s.user.username}</strong> · {formatDate(s.submittedAt)}</span>
+          <span>by <strong className="text-slate-200">{s.user.username}</strong> · {formatDate(s.submittedAt)}</span>
+          <span className="font-mono">· {reviews.count}/{reviews.requiredReviews} reviews</span>
+          <Link href="/review/guide" className="ml-auto inline-flex items-center gap-1 font-display text-xs font-semibold uppercase tracking-wider text-neon-300 hover:text-neon-200">
+            <BookOpen className="h-3.5 w-3.5" /> Rubric guide
+          </Link>
         </div>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
           <SubmissionTabs submission={s} defaultTab="ai" />
-          <details className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-            <summary className="cursor-pointer text-sm font-medium">Problem statement</summary>
-            <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{s.problem.description}</p>
+          <details className="rounded-xl bg-slate-900/80 p-4 shadow-[0_0_0_1px_rgb(160_166_196_/_0.12)]">
+            <summary className="cursor-pointer font-display text-sm font-bold uppercase tracking-wider text-slate-200">Problem statement</summary>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-slate-300">{s.problem.description}</p>
           </details>
         </div>
 
@@ -171,6 +204,56 @@ function Reviewer({ id }: { id: string }) {
             )}
           </Card>
 
+          {(reviews.count > (reviews.mine ? 1 : 0) || reviews.evaluation?.status === 'DISPUTED') && (
+            <Card className="p-5">
+              <h2 className="flex items-center gap-2 font-display text-lg font-bold uppercase text-white">
+                <Users className="h-4 w-4 text-neon-400" /> Other reviews
+              </h2>
+              {reviews.hidden ? (
+                <p className="mt-2 flex items-start gap-2 text-sm text-slate-400">
+                  <EyeOff className="mt-0.5 h-4 w-4 shrink-0" />
+                  {reviews.count} other review{reviews.count === 1 ? ' is' : 's are'} hidden until you submit yours, so your scores stay independent.
+                </p>
+              ) : (
+                <>
+                  <ul className="mt-3 space-y-3">
+                    {reviews.reviews
+                      .filter((r) => r.reviewerId !== user?.id)
+                      .map((r) => (
+                        <li key={r.id} className="rounded-lg bg-slate-950/60 p-3 text-sm">
+                          <p className="flex justify-between font-display text-xs font-bold uppercase tracking-wider text-slate-300">
+                            <span>{r.reviewer.username}</span>
+                            <span className="font-mono normal-case text-slate-400">
+                              {RUBRIC.map((k) => r[k.key]).join(' · ')}
+                              {r.solutionScore != null && ` · sol ${r.solutionScore}`}
+                            </span>
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-slate-300">{r.notes}</p>
+                        </li>
+                      ))}
+                  </ul>
+                  {reviews.evaluation?.status === 'DISPUTED' && (
+                    <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">
+                      <p className="flex items-center gap-2 font-display font-bold uppercase tracking-wide text-amber-300">
+                        <AlertTriangle className="h-4 w-4" /> Disputed
+                      </p>
+                      <p className="mt-1">
+                        Reviewers disagree by 2+ rubric points or a wide score gap. The averaged result ({reviews.evaluation.finalScore}) is hidden from
+                        the player until an admin accepts it or adds a deciding review.
+                      </p>
+                      {user?.role === 'ADMIN' && (
+                        <Button size="sm" className="mt-3" onClick={accept} loading={accepting}>Accept averaged result</Button>
+                      )}
+                    </div>
+                  )}
+                  {reviews.evaluation?.status === 'FINAL' && (
+                    <p className="mt-3 text-xs text-slate-400">Final combined score: <ScorePill value={reviews.evaluation.finalScore} /></p>
+                  )}
+                </>
+              )}
+            </Card>
+          )}
+
           <Card className="p-5">
             <h2 className="font-display text-lg font-bold uppercase text-white">Your scores</h2>
             <div className="mt-4 space-y-4">
@@ -179,11 +262,25 @@ function Reviewer({ id }: { id: string }) {
                   <input type="range" min={0} max={100} value={solutionScore} onChange={(e) => setSolutionScore(Number(e.target.value))} className="w-full accent-neon-400" />
                 </Field>
               )}
-              {isCode && <p className="text-sm text-slate-500">Solution score is set by the tests: <strong>{solution}</strong>/100</p>}
+              {isCode && <p className="text-sm text-slate-400">Solution score is set by the tests: <strong className="text-white">{solution}</strong>/100</p>}
               {RUBRIC.map((r) => (
                 <div key={r.key}>
-                  <p className="font-display text-sm font-bold uppercase tracking-wider text-slate-100">{r.label}</p>
-                  <p className="text-xs text-slate-500">{r.hint}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-display text-sm font-bold uppercase tracking-wider text-slate-100">{r.label}</p>
+                    <button
+                      onClick={() => setGuideFor(guideFor === r.key ? null : r.key)}
+                      aria-expanded={guideFor === r.key}
+                      className="font-display text-[11px] font-semibold uppercase tracking-wider text-neon-300 hover:text-neon-200"
+                    >
+                      {guideFor === r.key ? 'Hide anchors' : 'Anchors'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400">{r.hint}</p>
+                  {guideFor === r.key && (
+                    <div className="mt-2 rounded-lg bg-slate-950/60 p-3">
+                      <RubricAnchors entry={RUBRIC_GUIDE.find((g) => g.key === r.key)!} compact />
+                    </div>
+                  )}
                   <div className="mt-1.5 grid grid-cols-5 gap-1" role="radiogroup" aria-label={r.label}>
                     {[1, 2, 3, 4, 5].map((v) => (
                       <button
@@ -202,17 +299,17 @@ function Reviewer({ id }: { id: string }) {
                   </div>
                 </div>
               ))}
-              <Field label="Notes for the participant" hint="Required. Explain what was good and what to improve.">
+              <Field label="Notes for the player" hint="Required. Explain what was good and what to improve.">
                 <textarea className={`${inputClass} h-28`} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
-              <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
-                <div><p className="text-xs text-slate-500">Solution</p><ScorePill value={solution} /></div>
-                <div><p className="text-xs text-slate-500">AI usage</p><ScorePill value={usage} /></div>
-                <div><p className="text-xs text-slate-500">Final</p><ScorePill value={final} /></div>
+              <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-950/60 p-3 text-center">
+                <div><p className="text-xs text-slate-400">Solution</p><ScorePill value={solution} /></div>
+                <div><p className="text-xs text-slate-400">AI usage</p><ScorePill value={usage} /></div>
+                <div><p className="text-xs text-slate-400">Your final</p><ScorePill value={final} /></div>
               </div>
               <ErrorBox message={error} />
-              <Button className="w-full" onClick={save} loading={saving} disabled={!notes.trim()}>
-                {s.evaluation ? 'Update review' : 'Submit review'}
+              <Button className="w-full" onClick={save} loading={saving} disabled={!notes.trim() || ownSubmission}>
+                {ownSubmission ? 'You cannot review your own run' : reviews.mine ? 'Update your review' : 'Submit review'}
               </Button>
             </div>
           </Card>

@@ -34,7 +34,7 @@ router.get('/', optionalAuth, async (req, res) => {
   let solvedIds = new Set();
   if (req.user) {
     const accepted = await prisma.solve.findMany({
-      where: { userId: req.user.id, OR: [{ status: 'ACCEPTED' }, { evaluation: { isNot: null } }] },
+      where: { userId: req.user.id, OR: [{ status: 'ACCEPTED' }, { evaluation: { is: { status: 'FINAL' } } }] },
       select: { problemId: true },
       distinct: ['problemId']
     });

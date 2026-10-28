@@ -17,7 +17,7 @@ export const STATUS_LABELS: Record<SolveStatus | 'RAN', string> = {
   COMPILE_ERROR: 'Compile error',
   RUNTIME_ERROR: 'Runtime error',
   TIME_LIMIT: 'Time limit exceeded',
-  MANUAL_REVIEW: 'Awaiting review',
+  MANUAL_REVIEW: 'Reviewer-graded',
   JUDGE_ERROR: 'Judge error',
   RAN: 'Ran'
 };

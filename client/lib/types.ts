@@ -106,8 +106,28 @@ export interface Evaluation {
   aiUsageScore: number;
   finalScore: number;
   notes: string | null;
+  status: 'PENDING' | 'DISPUTED' | 'FINAL';
+  reviewCount: number;
   updatedAt: string;
   reviewer?: { username: string };
+}
+
+export interface Review extends Rubric {
+  id: string;
+  solutionScore: number | null;
+  notes: string;
+  updatedAt: string;
+  reviewerId?: string;
+  reviewer: { id?: string; username: string };
+}
+
+export interface ReviewsResponse {
+  requiredReviews: number;
+  count: number;
+  mine: Review | null;
+  hidden: boolean;
+  reviews: Review[];
+  evaluation: Evaluation | null;
 }
 
 export interface Submission {
@@ -124,6 +144,8 @@ export interface Submission {
   problem: { id: string; slug: string; title: string; type: ProblemType; difficulty: Difficulty; category: Category; description: string };
   aiSession: AISession | null;
   evaluation: Evaluation | null;
+  reviews: Review[];
+  reviewProgress: { count: number; required: number };
 }
 
 export interface SubmissionSummary {
@@ -150,7 +172,14 @@ export interface QueueItem {
   user: { id: string; username: string };
   problem: { id: string; title: string; type: ProblemType; difficulty: Difficulty; category: Category };
   aiSession: { totalMessages: number; runCount: number } | null;
-  evaluation: { finalScore: number; reviewer: { username: string } } | null;
+  evaluation: { finalScore: number; status: Evaluation['status']; reviewCount: number; reviewer: { username: string } } | null;
+  reviewCount: number;
+  reviewedByMe: boolean;
+}
+
+export interface QueueResponse {
+  requiredReviews: number;
+  items: QueueItem[];
 }
 
 export type Rubric = { aiEfficiency: number; aiLearning: number; aiTransparency: number; aiInnovation: number };

@@ -110,7 +110,7 @@ test('full solve -> import -> submit -> review -> leaderboard flow', async () =>
   const rtoken = reviewer.body.token;
 
   const queue = await api('GET', '/api/evaluations/queue', { token: rtoken });
-  assert.ok(queue.body.some((s) => s.id === sub.body.id));
+  assert.ok(queue.body.items.some((s) => s.id === sub.body.id));
 
   const reviewView = await api('GET', `/api/submissions/${sub.body.id}`, { token: rtoken });
   assert.equal(reviewView.status, 200, 'reviewers can open any submission');

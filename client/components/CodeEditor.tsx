@@ -54,7 +54,9 @@ export function CodeEditor({
       onMount={handleMount}
       height="100%"
       language={language === 'text' ? 'markdown' : language}
-      value={value}
+      // Uncontrolled on purpose: feeding every keystroke back through `value` lets a stale render
+      // overwrite newer text when typing fast. Remount (via `key`) to load different content.
+      defaultValue={value}
       onChange={(v) => onChange?.(v ?? '')}
       beforeMount={defineArenaTheme}
       theme="arena"
@@ -69,7 +71,16 @@ export function CodeEditor({
         automaticLayout: true,
         tabSize: 4,
         padding: { top: 12 },
-        wordWrap: language === 'text' ? 'on' : 'off'
+        wordWrap: language === 'text' ? 'on' : 'off',
+        // Prose answers: word completions fire on every word and hijack Enter.
+        ...(language === 'text' && {
+          quickSuggestions: false,
+          suggestOnTriggerCharacters: false,
+          wordBasedSuggestions: 'off',
+          acceptSuggestionOnEnter: 'off',
+          autoClosingBrackets: 'never',
+          autoClosingQuotes: 'never'
+        })
       }}
     />
   );
