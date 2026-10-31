@@ -3,6 +3,8 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole, optionalAuth, publicUser } from '../middleware/auth.js';
 import { badRequest, notFound } from '../lib/http.js';
 import { RUBRIC_KEYS } from '../lib/scoring.js';
+import { computeStandings } from '../lib/contests.js';
+import { ACHIEVEMENTS, STREAK_STATUSES, computeStreak, countedRuns, dayKey, earnedAchievements, nextDayStart } from '../lib/game.js';
 import { CATEGORIES, DIFFICULTIES } from './problems.js';
 
 const router = Router();
@@ -81,13 +83,52 @@ router.get('/leaderboard', optionalAuth, async (req, res) => {
   });
 });
 
+// Top three of an ended contest with more than three entrants, once all its reviews are final.
+async function contestPodiums(userId) {
+  const entries = await prisma.contestEntry.findMany({
+    where: { userId, contest: { published: true, endsAt: { lt: new Date() } } },
+    include: { contest: true }
+  });
+  const podiums = [];
+  for (const { contest } of entries) {
+    const standings = await computeStandings(contest);
+    if (standings.length <= 3 || standings.some((r) => r.pending > 0)) continue;
+    const mine = standings.find((r) => r.userId === userId);
+    if (mine && mine.rank <= 3 && mine.solved > 0) podiums.push(contest.endsAt);
+  }
+  return podiums;
+}
+
+async function streakRuns(solves) {
+  const days = [...new Set(solves.filter((s) => STREAK_STATUSES.includes(s.status)).map((s) => dayKey(s.submittedAt)))];
+  const dailies = await prisma.dailyChallenge.findMany({ where: { date: { in: days } } });
+  return countedRuns(solves, dailies);
+}
+
+async function syncAchievements(userId, { evaluated, runs }) {
+  const stored = await prisma.achievement.findMany({ where: { userId } });
+  const earnedAt = new Map(stored.map((a) => [a.key, a.earnedAt]));
+
+  const earned = earnedAchievements({
+    evaluated: evaluated.map((s) => ({ ...s.evaluation, date: s.submittedAt, difficulty: s.problem.difficulty, category: s.problem.category })),
+    runs,
+    podiums: earnedAt.has('podium') ? [] : await contestPodiums(userId)
+  });
+  const fresh = [...earned].filter(([key]) => !earnedAt.has(key));
+  if (fresh.length) {
+    await prisma.achievement.createMany({ data: fresh.map(([key, date]) => ({ userId, key, earnedAt: date })), skipDuplicates: true });
+    for (const [key, date] of fresh) earnedAt.set(key, date);
+  }
+  return ACHIEVEMENTS.map(({ key, title, description }) => ({ key, title, description, earnedAt: earnedAt.get(key) ?? null }));
+}
+
 async function playerStats(userId) {
   const solves = await prisma.solve.findMany({
     where: { userId },
     orderBy: { submittedAt: 'asc' },
     select: {
       id: true, status: true, submittedAt: true, problemId: true,
-      problem: { select: { title: true, slug: true, difficulty: true } },
+      problem: { select: { title: true, slug: true, difficulty: true, category: true } },
       aiSession: { select: { totalMessages: true } },
       evaluation: true
     }
@@ -95,6 +136,9 @@ async function playerStats(userId) {
   for (const s of solves) if (s.evaluation?.status !== 'FINAL') s.evaluation = null;
   const evaluated = solves.filter((s) => s.evaluation);
   const standing = (await computeLeaderboard()).find((r) => r.userId === userId);
+  const runs = await streakRuns(solves);
+  const streak = computeStreak(runs.map((r) => r.day));
+  const achievements = await syncAchievements(userId, { evaluated, runs });
 
   const cleared = new Map();
   for (const s of solves) {
@@ -121,6 +165,8 @@ async function playerStats(userId) {
     ),
     avgMessagesPerAttempt: avg(solves.map((s) => s.aiSession?.totalMessages ?? 0)),
     cleared: [...cleared.values()],
+    streak,
+    achievements,
     timeline: evaluated.map((s) => ({
       solveId: s.id,
       problem: s.problem.title,
@@ -135,6 +181,83 @@ async function playerStats(userId) {
 
 router.get('/me/stats', requireAuth, async (req, res) => {
   res.json(await playerStats(req.user.id));
+});
+
+const progressSnapshot = (stats) => ({
+  totalPoints: stats.totalPoints,
+  rank: stats.rank,
+  avgFinalScore: stats.avgFinalScore,
+  evaluated: stats.evaluated,
+  achievements: stats.achievements.filter((a) => a.earnedAt).map((a) => a.key)
+});
+
+// What changed since the player last dismissed a progress update. Compared against a saved
+// snapshot rather than per-review events, so several results finishing at once show as one update.
+router.get('/me/progress', requireAuth, async (req, res) => {
+  const [stats, user] = await Promise.all([
+    playerStats(req.user.id),
+    prisma.user.findUnique({ where: { id: req.user.id }, select: { progressSeen: true } })
+  ]);
+  const current = progressSnapshot(stats);
+  // New accounts start from a zero snapshot, so only accounts older than this feature have none.
+  // Their history isn't news: start them from here rather than celebrating all of it at once.
+  const previous = user.progressSeen ?? current;
+  if (!user.progressSeen) await prisma.user.update({ where: { id: req.user.id }, data: { progressSeen: current } });
+  const seen = new Set(previous.achievements);
+  res.json({
+    previous,
+    current,
+    newAchievements: stats.achievements.filter((a) => a.earnedAt && !seen.has(a.key))
+  });
+});
+
+router.post('/me/progress/seen', requireAuth, async (req, res) => {
+  const progressSeen = progressSnapshot(await playerStats(req.user.id));
+  await prisma.user.update({ where: { id: req.user.id }, data: { progressSeen } });
+  res.status(204).end();
+});
+
+const dailySelect = { problem: { select: { id: true, slug: true, title: true, difficulty: true, category: true, type: true, published: true } } };
+
+// Walks through every published problem before repeating one.
+async function pickDailyProblem(date) {
+  const problems = await prisma.problem.findMany({ where: { published: true }, orderBy: { createdAt: 'asc' }, select: { id: true } });
+  if (!problems.length) return null;
+  const recent = await prisma.dailyChallenge.findMany({ orderBy: { date: 'desc' }, take: problems.length - 1, select: { problemId: true } });
+  const used = new Set(recent.map((d) => d.problemId));
+  const candidates = problems.filter((p) => !used.has(p.id));
+  return candidates[Number(date.replaceAll('-', '')) % candidates.length].id;
+}
+
+async function dailyChallenge(date) {
+  const row = await prisma.dailyChallenge.findUnique({ where: { date }, include: dailySelect });
+  if (row?.problem.published) return row;
+  if (row) await prisma.dailyChallenge.delete({ where: { date } });
+  const problemId = await pickDailyProblem(date);
+  if (!problemId) return null;
+  await prisma.dailyChallenge.createMany({ data: [{ date, problemId }], skipDuplicates: true });
+  return prisma.dailyChallenge.findUnique({ where: { date }, include: dailySelect });
+}
+
+router.get('/daily', optionalAuth, async (req, res) => {
+  const now = new Date();
+  const date = dayKey(now);
+  const daily = await dailyChallenge(date);
+  const solves = req.user
+    ? await prisma.solve.findMany({
+        where: { userId: req.user.id, status: { in: STREAK_STATUSES } },
+        select: { problemId: true, status: true, submittedAt: true, evaluation: { select: { status: true, solutionScore: true } } }
+      })
+    : [];
+  const runs = await streakRuns(solves);
+  const { published, ...problem } = daily?.problem ?? {};
+  res.json({
+    date,
+    resetsAt: nextDayStart(now),
+    problem: daily ? problem : null,
+    completed: runs.some((r) => r.daily && r.day === date),
+    streak: req.user ? computeStreak(runs.map((r) => r.day), date) : null
+  });
 });
 
 router.get('/players/:username', async (req, res) => {

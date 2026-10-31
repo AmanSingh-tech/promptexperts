@@ -3,6 +3,7 @@ import { Chakra_Petch, Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { Navbar } from '@/components/Navbar';
+import { ProgressUpdates } from '@/components/ProgressUpdates';
 import './globals.css';
 
 const display = Chakra_Petch({ subsets: ['latin'], weight: ['500', '600', '700'], variable: '--font-display' });
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <Navbar />
           {children}
+          <ProgressUpdates />
           <Toaster
             theme="dark"
             position="bottom-left"

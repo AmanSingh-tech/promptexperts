@@ -80,6 +80,7 @@ model User {
   lastName    String   @default("")
   role        Role     @default(USER)
   tokenVersion Int     @default(0)
+  progressSeen Json?    @default("{\"totalPoints\":0,\"rank\":null,\"avgFinalScore\":0,\"evaluated\":0,\"achievements\":[]}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -90,6 +91,7 @@ model User {
   problems    Problem[]    @relation("ProblemAuthor")
   resetTokens PasswordResetToken[]
   contestEntries ContestEntry[]
+  achievements Achievement[]
 }
 
 model PasswordResetToken {
@@ -127,6 +129,7 @@ model Problem {
   aiSessions  AISession[]
   tags        ProblemTag[]
   contests    ContestProblem[]
+  dailyChallenges DailyChallenge[]
 }
 
 model TestCase {
@@ -277,6 +280,27 @@ model ContestEntry {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([contestId, userId])
+}
+
+// Once earned, an achievement stays even if a later re-review lowers the score behind it.
+model Achievement {
+  userId   String
+  key      String
+  earnedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
+}
+
+// One featured challenge per UTC day. date is YYYY-MM-DD.
+model DailyChallenge {
+  date      String  @id
+  problemId String
+
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
 }
 
 model Evaluation {

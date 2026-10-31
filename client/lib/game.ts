@@ -1,3 +1,5 @@
+import type { Progress } from './types';
+
 export const XP_PER_LEVEL = 100;
 
 export function levelFor(totalPoints: number) {
@@ -24,6 +26,24 @@ export const TIERS: Tier[] = [
 export function tierFor(avgFinalScore: number, evaluated: number): Tier | null {
   if (!evaluated) return null;
   return TIERS.find((t) => avgFinalScore >= t.min) ?? TIERS[TIERS.length - 1];
+}
+
+// Only gains are celebrated. A rank that slipped or a re-review that lowered a score stays quiet.
+export function progressGains({ previous: before, current, newAchievements }: Progress) {
+  const xp = Math.max(0, current.totalPoints - before.totalPoints);
+  const level = levelFor(current.totalPoints).level;
+  const beforeTier = tierFor(before.avgFinalScore, before.evaluated);
+  const tier = tierFor(current.avgFinalScore, current.evaluated);
+  const tierUp = tier && (!beforeTier || tier.min > beforeTier.min) ? tier : null;
+  const rankUp = current.rank != null && (before.rank == null || current.rank < before.rank) ? { from: before.rank, to: current.rank } : null;
+  return {
+    xp,
+    level: level > levelFor(before.totalPoints).level ? level : null,
+    tier: tierUp,
+    rank: rankUp,
+    achievements: newAchievements,
+    any: xp > 0 || !!tierUp || !!rankUp || newAchievements.length > 0
+  };
 }
 
 const pluralRules = new Intl.PluralRules('en');

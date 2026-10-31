@@ -216,6 +216,41 @@ export interface LeaderboardRow {
   avgFinalScore: number;
 }
 
+export interface Streak {
+  current: number;
+  best: number;
+  activeToday: boolean;
+}
+
+export interface Achievement {
+  key: string;
+  title: string;
+  description: string;
+  earnedAt: string | null;
+}
+
+export interface ProgressSnapshot {
+  totalPoints: number;
+  rank: number | null;
+  avgFinalScore: number;
+  evaluated: number;
+  achievements: string[];
+}
+
+export interface Progress {
+  previous: ProgressSnapshot;
+  current: ProgressSnapshot;
+  newAchievements: Achievement[];
+}
+
+export interface DailyChallenge {
+  date: string;
+  resetsAt: string;
+  problem: { id: string; slug: string; title: string; difficulty: Difficulty; category: Category; type: ProblemType } | null;
+  completed: boolean;
+  streak: Streak | null;
+}
+
 export interface MyStats {
   totalPoints: number;
   rank: number | null;
@@ -229,6 +264,8 @@ export interface MyStats {
   rubric: Record<keyof Rubric, number | null>;
   avgMessagesPerAttempt: number;
   cleared: { slug: string; title: string; difficulty: Difficulty; bestFinalScore: number | null }[];
+  streak: Streak;
+  achievements: Achievement[];
   timeline: { solveId?: string; problem: string; slug: string; date: string; solutionScore: number; aiUsageScore: number; finalScore: number }[];
 }
 

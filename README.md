@@ -18,7 +18,11 @@ The AI conversation is captured in two ways: a built-in Claude assistant next to
 | Scores | `AI usage = (mean rubric − 1) / 4 × 100`, `final = 0.4 × solution + 0.6 × AI usage` |
 | Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
 | Contests | Timed events with a start and end, an ordered set of challenges, and entrants. Unpublished challenges in a contest stay hidden until it starts. A submission counts only when it's made during the contest by someone who joined, on one of its challenges. Standings add up each player's best reviewed score per challenge, show pending reviews separately, and break ties by who reached their total first. Admins create and edit contests in **Admin → Contests** |
-| Player pages | Public `/players/:username` pages with level, tier, rank, skill stats, score history and cleared challenges. Code and AI transcripts stay private |
+| Daily challenge | One featured challenge per UTC day on the Arena, cycling through every published challenge before repeating. It gives no extra XP |
+| Streaks | Count consecutive UTC days with a passing submission or a written answer sent for review. A repeat of a challenge only counts on the day it's the daily. Written answers count straight away but drop out if the reviewer gives them a solution score under 50. A streak ends after a full day is missed |
+| Achievements | Ten badges for reviews, scores, streaks, daily challenges and contest podiums, shown on player pages. Earned dates come from the player's history, unreviewed written answers don't count towards them, and once earned they stay, even if a re-review lowers the score |
+| Level-up updates | After a review goes final, a dialog shows XP gained plus any new level, tier, rank and achievements since the player last dismissed it. It waits until they leave the problem workspace. Accounts created before this feature start from their current progress, so their history isn't replayed as one update |
+| Player pages | Public `/players/:username` pages with level, tier, rank, streak, achievements, skill stats, score history and cleared challenges. Code and AI transcripts stay private |
 | Profile | Score trend, rubric averages and a tip for the weakest rubric |
 | Admin | Create/edit problems with hidden and sample tests, starter code and tags; manage user roles (user, reviewer, admin); usage overview including Claude tokens |
 
@@ -90,7 +94,7 @@ CI (`.github/workflows/ci.yml`) runs migrations, seeds, the unit and API tests, 
 npm test
 ```
 
-- `server/test/*.test.js`: scoring, transcript parser, AI-usage heuristics, output comparison
+- `server/test/*.test.js`: scoring, transcript parser, AI-usage heuristics, output comparison, streaks and achievements
 - `server/test/integration/`: end-to-end API flow against the real database and sandbox (register → session → import → run → submit → review → leaderboard, role checks, written problems, admin problem management)
 - client type check
 
@@ -110,7 +114,8 @@ Expected outputs for the seeded problems are generated from reference solutions 
 | POST | `/api/evaluations/:solveId/ai-review` | reviewer, admin |
 | PUT | `/api/evaluations/:solveId` | reviewer, admin (not on own submissions) |
 | GET | `/api/leaderboard?board=xp\|ai\|solution&period=all\|month\|week`, `/api/players/:username` | anyone |
-| GET | `/api/me/stats` | signed in |
+| GET | `/api/me/stats`, `/api/me/progress`; POST `/api/me/progress/seen` | signed in |
+| GET | `/api/daily` | anyone (streak and completion when signed in) |
 | GET | `/api/contests`, `/api/contests/:slug` (details plus standings) | anyone |
 | POST | `/api/contests/:slug/join`; `contestId` on `POST /api/submissions` | signed in |
 | POST/PATCH/DELETE | `/api/contests[/:id]` | admin |

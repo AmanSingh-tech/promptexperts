@@ -8,6 +8,7 @@ import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '@/lib/format';
 import { plural } from '@/lib/game';
 import type { Category, Difficulty, ProblemSummary, ProblemType } from '@/lib/types';
 import { useAuth } from '@/components/AuthProvider';
+import { DailyCard } from '@/components/DailyCard';
 import { Badge, Chip, DifficultyBadge, EmptyState, ErrorBox, PageHeader, Spinner, cx, inputClass } from '@/components/ui';
 
 const STRIPE: Record<Difficulty, string> = {
@@ -66,6 +67,8 @@ export default function ProblemsPage() {
           )
         }
       />
+
+      <DailyCard />
 
       <div className="mb-6 space-y-3">
         <div className="relative max-w-md">

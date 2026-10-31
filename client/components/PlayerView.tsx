@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Flame } from 'lucide-react';
 import { formatDate } from '@/lib/format';
 import { levelFor, plural, tierFor } from '@/lib/game';
 import type { MyStats } from '@/lib/types';
+import { Achievements } from './Achievements';
 import { AnimatedNumber } from './AnimatedNumber';
 import { RubricBars } from './ScoreCard';
 import { ScoreTrend } from './ScoreTrend';
@@ -63,6 +64,12 @@ export function PlayerView({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <TierBadge tier={tier} />
               {stats.rank && <Link href="/leaderboard" className="font-mono text-sm text-slate-300 hover:text-neon-300">Rank #{stats.rank}</Link>}
+              {stats.streak.best > 0 && (
+                <span className="flex items-center gap-1 text-sm text-slate-300" title={`Best streak: ${plural(stats.streak.best, 'day')}`}>
+                  <Flame className={cx('h-4 w-4', stats.streak.current ? 'text-amber-300' : 'text-slate-500')} aria-hidden />
+                  {plural(stats.streak.current, 'day')} streak
+                </span>
+              )}
             </div>
           </div>
           <div className="w-full sm:w-64">
@@ -130,6 +137,8 @@ export function PlayerView({
           </Card>
         </div>
       )}
+
+      <Achievements items={stats.achievements} />
 
       {stats.cleared.length > 0 && (
         <Card className="mt-6 p-5">
