@@ -9,8 +9,8 @@ import { createLimiter } from '../lib/rate-limit.js';
 import { sendMail } from '../lib/mailer.js';
 
 const router = Router();
-const loginLimiter = createLimiter({ limit: 10, windowMs: 15 * 60 * 1000 });
-const forgotLimiter = createLimiter({ limit: 5, windowMs: 60 * 60 * 1000 });
+const loginLimiter = createLimiter({ name: 'login', limit: 10, windowMs: 15 * 60 * 1000 });
+const forgotLimiter = createLimiter({ name: 'forgot', limit: 5, windowMs: 60 * 60 * 1000 });
 const RESET_TTL_MS = 30 * 60 * 1000;
 
 function validatePassword(password) {
@@ -51,14 +51,14 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body ?? {};
   if (!username || !password) throw badRequest('username and password are required');
   const key = `${req.ip}:${String(username).toLowerCase()}`;
-  if (loginLimiter.blocked(key)) throw new HttpError(429, 'Too many failed sign-in attempts. Try again in 15 minutes.');
+  if (await loginLimiter.blocked(key)) throw new HttpError(429, 'Too many failed sign-in attempts. Try again in 15 minutes.');
 
   const user = await prisma.user.findFirst({ where: { OR: [{ username }, { email: String(username).toLowerCase() }] } });
   if (!user || !(await bcrypt.compare(String(password), user.password))) {
-    loginLimiter.hit(key);
+    await loginLimiter.hit(key);
     throw new HttpError(401, 'Invalid username or password');
   }
-  loginLimiter.clear(key);
+  await loginLimiter.clear(key);
   startSession(res, user);
 });
 
@@ -108,8 +108,8 @@ router.post('/forgot', async (req, res) => {
   const email = String(req.body?.email ?? '').toLowerCase().trim();
   if (!email) throw badRequest('email is required');
   const key = `${req.ip}:${email}`;
-  if (forgotLimiter.blocked(key)) throw new HttpError(429, 'Too many reset requests. Try again later.');
-  forgotLimiter.hit(key);
+  if (await forgotLimiter.blocked(key)) throw new HttpError(429, 'Too many reset requests. Try again later.');
+  await forgotLimiter.hit(key);
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (user) {

@@ -28,6 +28,16 @@ function assertActive(session) {
   if (session.status !== 'ACTIVE') throw new HttpError(409, 'This session is closed. Start a new attempt to keep chatting.');
 }
 
+// Open attempts, for the browser extension's attempt picker.
+router.get('/active', async (req, res) => {
+  const sessions = await prisma.aISession.findMany({
+    where: { userId: req.user.id, status: 'ACTIVE' },
+    select: { id: true, startedAt: true, problem: { select: { title: true, slug: true } } },
+    orderBy: { startedAt: 'desc' }
+  });
+  res.json({ sessions });
+});
+
 router.post('/', async (req, res) => {
   const { problemId } = req.body ?? {};
   if (!problemId) throw badRequest('problemId is required');

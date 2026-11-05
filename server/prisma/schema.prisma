@@ -345,3 +345,20 @@ model Review {
 
   @@unique([solveId, reviewerId])
 }
+
+// Shared by every API instance. Keys are "<limiter>:<subject>".
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+// One running judge job. A lease stops being renewed if its API instance dies, so it frees itself.
+model JudgeLease {
+  userId    String   @id
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}

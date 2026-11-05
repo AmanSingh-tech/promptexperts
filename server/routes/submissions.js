@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { badRequest, notFound, forbidden, HttpError } from '../lib/http.js';
+import { withJudgeSlot } from '../lib/judge-slots.js';
 import { requireAuth, isStaff } from '../middleware/auth.js';
 import { judge, LANGUAGES } from '../lib/judge.js';
 import { requiredReviews } from '../lib/scoring.js';
@@ -17,23 +18,6 @@ async function recordEvent(sessionId, data) {
   if (count >= MAX_EVENTS_PER_SESSION) return;
   await prisma.sessionEvent.create({ data: { sessionId, ...data } });
 }
-const MAX_JUDGES = Number(process.env.MAX_CONCURRENT_JUDGES || 4);
-let activeJudges = 0;
-const busyUsers = new Set();
-
-async function withJudgeSlot(userId, fn) {
-  if (busyUsers.has(userId)) throw new HttpError(429, 'You already have a run in progress.');
-  if (activeJudges >= MAX_JUDGES) throw new HttpError(503, 'The judge is busy. Please retry in a few seconds.');
-  busyUsers.add(userId);
-  activeJudges++;
-  try {
-    return await fn();
-  } finally {
-    activeJudges--;
-    busyUsers.delete(userId);
-  }
-}
-
 function validateCode(problem, { language, code }) {
   if (typeof code !== 'string' || !code.trim()) throw badRequest('code is required');
   if (code.length > MAX_CODE_CHARS) throw badRequest('Submission is too large');

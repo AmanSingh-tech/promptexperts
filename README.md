@@ -5,20 +5,20 @@ A practice platform where people solve problems **with AI** and are scored on tw
 - **Solution (40%)**: code problems are auto-judged on hidden tests in a sandbox; written problems (system design, web dev) are graded by a reviewer.
 - **AI usage (60%)**: reviewers read the full AI transcript and score it 1–5 on four rubrics: efficiency, learning, transparency and innovation.
 
-The AI conversation is captured in two ways: a built-in Claude assistant next to the editor, and an importer for transcripts from ChatGPT, Claude.ai, Gemini, Copilot, Cursor and others (labelled text or JSON exports).
+The AI conversation is captured in three ways: a built-in Claude assistant next to the editor, an importer for transcripts from ChatGPT, Claude.ai, Gemini, Copilot, Cursor and others (labelled text or JSON exports), and a [Chrome extension](extension/README.md) that sends the open ChatGPT, Claude or Gemini conversation to an attempt.
 
 ## Features
 
 | Area | What it does |
 | --- | --- |
 | Workspace | Problem statement, Monaco editor (Python, C++17, JavaScript) or Markdown answer editor, run on samples or custom input, Claude chat, transcript import |
-| Judge | Each run executes in a throwaway Docker container: no network, 256 MB RAM, 1 CPU, 64 PIDs, read-only filesystem, per-test time limit |
+| Judge | Each run executes in a throwaway Docker container: no network, 256 MB RAM, 1 CPU, 64 PIDs, read-only filesystem, per-test time limit. Each player gets one run at a time, with `MAX_CONCURRENT_JUDGES` (default 4) across all API instances |
 | Attempts | Every attempt is an AI session. Submitting locks the code and the transcript together; "New attempt" discards the current conversation |
 | Review | Queue with **To review / Disputed / Final** tabs. Reviewers get automatic transcript analysis with suggested scores, a code-history timeline with diffs (it flags large pastes), and an optional Claude second opinion. A rubric guide gives anchored examples for scores 1, 3 and 5 (`/review/guide`). With `REQUIRED_REVIEWS` set above 1, each submission needs that many independent reviews. Reviewers can't see each other's scores until they submit their own. If reviewers disagree (a gap of 2+ rubric points, 25+ solution points or 15+ final points), the result is **disputed** until an admin accepts it or adds a deciding review. Only final results reach the player and the leaderboard |
 | Scores | `AI usage = (mean rubric − 1) / 4 × 100`, `final = 0.4 × solution + 0.6 × AI usage` |
 | Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
 | Contests | Timed events with a start and end, an ordered set of challenges, and entrants. Unpublished challenges in a contest stay hidden until it starts. A submission counts only when it's made during the contest by someone who joined, on one of its challenges. Standings add up each player's best reviewed score per challenge, show pending reviews separately, and break ties by who reached their total first. Admins create and edit contests in **Admin → Contests** |
-| Daily challenge | One featured challenge per UTC day on the Arena, cycling through every published challenge before repeating. It gives no extra XP |
+| Daily challenge | One featured challenge per UTC day on the Practice page, cycling through every published challenge before repeating. It gives no extra XP |
 | Streaks | Count consecutive UTC days with a passing submission or a written answer sent for review. A repeat of a challenge only counts on the day it's the daily. Written answers count straight away but drop out if the reviewer gives them a solution score under 50. A streak ends after a full day is missed |
 | Achievements | Ten badges for reviews, scores, streaks, daily challenges and contest podiums, shown on player pages. Earned dates come from the player's history, unreviewed written answers don't count towards them, and once earned they stay, even if a re-review lowers the score |
 | Level-up updates | After a review goes final, a dialog shows XP gained plus any new level, tier, rank and achievements since the player last dismissed it. It waits until they leave the problem workspace. Accounts created before this feature start from their current progress, so their history isn't replayed as one update |
@@ -28,7 +28,9 @@ The AI conversation is captured in two ways: a built-in Claude assistant next to
 
 ## Design
 
-The web app uses a dark, game-style look: the problem list is "the Arena", submissions are runs in a match history, and players earn XP (each player's best final score per challenge, added up). They level up every 100 XP and get a tier (Bronze to Diamond) from their average final score. Motion and interaction follow [Emil Kowalski's design-engineering skills](https://github.com/emilkowalski/skills): strong ease-out curves under 300 ms, `scale(0.97)` press feedback, hover effects only on devices with a real pointer, stagger only on first load, transform/opacity-only animation, `prefers-reduced-motion` support, Sonner toasts and NumberFlow score counters. It also includes the mobile fixes (`100dvh`, 16px inputs, no tap flash).
+The web app follows the look of developer practice sites such as HackerRank: a dark navy top bar over light grey pages, white square-cornered cards, one green accent and sentence-case text. The Practice page lists challenges as rows with a filter sidebar, and the workspace keeps the problem, editor and AI chat side by side with **Run Code** and **Submit Code** under the editor.
+
+Players still earn XP (each player's best final score per challenge, added up), level up every 100 XP and get a tier (Bronze to Diamond) from their average final score. Motion stays restrained: strong ease-out curves under 300 ms, `scale(0.97)` press feedback, hover effects only on devices with a real pointer, transform/opacity-only animation, `prefers-reduced-motion` support, Sonner toasts and NumberFlow score counters. It also includes the mobile fixes (`100dvh`, 16px inputs, no tap flash). Colour shades that carry white text keep at least 4.5:1 contrast.
 
 ## Stack
 
@@ -69,7 +71,7 @@ The server uses the Anthropic SDK's standard credential lookup (`ANTHROPIC_API_K
 
 - Sessions are httpOnly, `SameSite=Lax` cookies. Cookie-authenticated writes must send `X-Requested-With: ailogracer`, which the web app does automatically. API clients can use the `token` returned by login as a Bearer token instead.
 - The web app proxies `/api/*` to the API (`API_ORIGIN`), so the cookie belongs to the site itself and no CORS is needed in production.
-- Sign-in is rate-limited (10 failures per 15 minutes per IP and username). Password reset links expire after 30 minutes and work once. They are emailed through `SMTP_URL`, or printed to the API log when that isn't set. Admins can generate reset links from **Admin → Users**.
+- Sign-in is rate-limited (10 failures per 15 minutes per IP and username). Limits are stored in Postgres, so they hold across API instances. Password reset links expire after 30 minutes and work once. They are emailed through `SMTP_URL`, or printed to the API log when that isn't set. Admins can generate reset links from **Admin → Users**.
 - Changing or resetting a password, or choosing **Sign out everywhere**, revokes every other session.
 
 ### Production deployment
@@ -95,7 +97,7 @@ npm test
 ```
 
 - `server/test/*.test.js`: scoring, transcript parser, AI-usage heuristics, output comparison, streaks and achievements
-- `server/test/integration/`: end-to-end API flow against the real database and sandbox (register → session → import → run → submit → review → leaderboard, role checks, written problems, admin problem management)
+- `server/test/integration/`: end-to-end API flow against the real database and sandbox (register → session → import → run → submit → review → leaderboard, role checks, written problems, admin problem management), plus shared rate limits, judge slots and the extension's attempt list
 - client type check
 
 Expected outputs for the seeded problems are generated from reference solutions with `npm --prefix server run seed:expected`.
@@ -107,6 +109,7 @@ Expected outputs for the seeded problems are generated from reference solutions 
 | POST | `/api/auth/register`, `/api/auth/login`; GET `/api/auth/me` | anyone / signed in |
 | GET | `/api/problems`, `/api/problems/:idOrSlug` | anyone (hidden tests only for staff) |
 | POST/PATCH/DELETE | `/api/problems[/:id]` | admin |
+| GET | `/api/sessions/active` | signed in |
 | POST | `/api/sessions` (start or resume), `/api/sessions/:id/messages`, `/api/sessions/:id/import`, `/api/sessions/:id/abandon` | owner |
 | POST | `/api/submissions/run`, `/api/submissions` | signed in |
 | GET | `/api/submissions/mine`, `/api/submissions/:id` | owner or staff |
@@ -123,7 +126,6 @@ Expected outputs for the seeded problems are generated from reference solutions 
 
 ## Known limitations
 
-- Rate limiting is in-process (one concurrent judge run per user, `MAX_CONCURRENT_JUDGES` overall); use a shared limiter when running several API instances.
 - The automatic analysis is heuristic and English-centric; it suggests scores, and the reviewer decides.
-- There is no browser extension yet; external tools are covered by transcript import and file upload (ChatGPT and Claude.ai exports).
+- The Chrome extension reads each site's page structure, which can change without notice. Its selectors have only been tested against sample pages, so check them on the live sites. Transcript import and file upload remain the fallback.
 - The Claude chat and AI second opinion have only been exercised against a stubbed API in tests; check them once with a real `ANTHROPIC_API_KEY`.

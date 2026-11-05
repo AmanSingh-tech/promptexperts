@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AILOGRACER</title>
+  <style>
+    :root { color-scheme: light; }
+    body { width: 320px; margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #1e293b; background: #fff; }
+    header { padding: 10px 14px; background: #0e141e; color: #fff; font-weight: 700; }
+    main { padding: 14px; display: grid; gap: 10px; }
+    label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: #475569; }
+    select, input { font: inherit; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 0; }
+    button { font: inherit; font-weight: 600; padding: 8px; border: 0; border-radius: 4px; color: #fff; background: #15803d; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    #status { margin: 0; font-size: 13px; color: #475569; }
+    #status.error { color: #b91c1c; }
+    details { font-size: 12px; color: #475569; }
+    details > div { margin-top: 8px; display: grid; gap: 8px; }
+    #save { color: #1e293b; background: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <header>AILOGRACER</header>
+  <main>
+    <p id="status">Loading…</p>
+    <label id="attemptField" hidden>Attempt
+      <select id="attempt"></select>
+    </label>
+    <button id="send" hidden disabled>Send conversation</button>
+    <details>
+      <summary>Site address</summary>
+      <div>
+        <input id="app" type="url" aria-label="AILOGRACER address">
+        <button id="save">Save address</button>
+      </div>
+    </details>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

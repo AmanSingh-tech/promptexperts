@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "AILOGRACER Transcript Capture",
+  "version": "0.1.0",
+  "description": "Sends the conversation open in ChatGPT, Claude or Gemini to your AILOGRACER attempt.",
+  "action": { "default_title": "Send to AILOGRACER", "default_popup": "popup.html" },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["http://localhost:3000/*"],
+  "optional_host_permissions": ["https://*/*"]
+}

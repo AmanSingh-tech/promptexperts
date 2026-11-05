@@ -1,21 +1,25 @@
-// Fixed-window counter kept in memory; use a shared store (e.g. Redis) when running several API instances.
-export function createLimiter({ limit, windowMs }) {
-  const hits = new Map();
+import { prisma } from './prisma.js';
+
+// Fixed-window counter stored in Postgres, so every API instance sees the same counts.
+export function createLimiter({ name, limit, windowMs }) {
+  const id = (key) => `${name}:${key}`;
   return {
-    blocked(key) {
-      const h = hits.get(key);
-      if (!h || h.reset < Date.now()) return false;
-      return h.count >= limit;
+    async blocked(key) {
+      const h = await prisma.rateLimit.findUnique({ where: { key: id(key) } });
+      return !!h && h.resetAt >= new Date() && h.count >= limit;
     },
-    hit(key) {
-      const now = Date.now();
-      const h = hits.get(key);
-      if (!h || h.reset < now) hits.set(key, { count: 1, reset: now + windowMs });
-      else h.count++;
-      if (hits.size > 10000) for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+    async hit(key) {
+      const now = new Date();
+      const reset = new Date(now.getTime() + windowMs);
+      await prisma.$executeRaw`
+        INSERT INTO "RateLimit" ("key", "count", "resetAt") VALUES (${id(key)}, 1, ${reset})
+        ON CONFLICT ("key") DO UPDATE SET
+          "count" = CASE WHEN "RateLimit"."resetAt" < ${now} THEN 1 ELSE "RateLimit"."count" + 1 END,
+          "resetAt" = CASE WHEN "RateLimit"."resetAt" < ${now} THEN ${reset} ELSE "RateLimit"."resetAt" END`;
+      if (Math.random() < 0.01) await prisma.rateLimit.deleteMany({ where: { resetAt: { lt: now } } });
     },
-    clear(key) {
-      hits.delete(key);
+    async clear(key) {
+      await prisma.rateLimit.deleteMany({ where: { key: id(key) } });
     }
   };
 }
