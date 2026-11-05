@@ -33,9 +33,9 @@ function LoginForm() {
   }
 
   return (
-    <Card hud className="w-full max-w-sm p-7">
-      <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Welcome back</p>
-      <h1 className="font-display text-2xl font-bold uppercase text-white">Player login</h1>
+    <Card className="w-full max-w-sm p-7">
+      <p className="font-display text-xs font-semibold text-brand-700">Welcome back</p>
+      <h1 className="font-display text-2xl font-bold text-slate-900">Log in</h1>
       <form onSubmit={submit} className="mt-5 space-y-4">
         <ErrorBox message={error} />
         <Field label="Username or email">
@@ -45,12 +45,12 @@ function LoginForm() {
           <input className={inputClass} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
         </Field>
         <div className="-mt-2 text-right">
-          <Link href="/forgot" className="text-xs font-semibold text-neon-300 hover:underline">Forgot password?</Link>
+          <Link href="/forgot" className="text-xs font-semibold text-brand-700 hover:underline">Forgot password?</Link>
         </div>
         <Button type="submit" loading={loading} className="w-full">Sign in</Button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">
-        New here? <Link href="/register" className="font-semibold text-neon-300 hover:underline">Create an account</Link>
+        New here? <Link href="/register" className="font-semibold text-brand-700 hover:underline">Create an account</Link>
       </p>
     </Card>
   );

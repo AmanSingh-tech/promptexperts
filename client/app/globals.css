@@ -5,28 +5,22 @@
 :root {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  /* Chart series: validated categorical slots for the dark surface. */
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --chart-grid: #232741;
-  --chart-axis: #a0a6c4;
+  /* Chart series: categorical slots for a white surface. */
+  --series-1: #2a6fc9;
+  --series-2: #c2410c;
+  --series-3: #15803d;
+  --chart-grid: #e7eeef;
+  --chart-axis: #4f5e67;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
 
 body {
-  @apply bg-slate-950 font-sans text-slate-100 antialiased;
-  background-image:
-    radial-gradient(60rem 30rem at 50% -10rem, rgb(130 87 255 / 0.18), transparent 70%),
-    linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
-  background-size: auto, 48px 48px, 48px 48px;
-  background-attachment: fixed;
+  @apply bg-slate-50 font-sans text-slate-700 antialiased;
 }
 
 h1, h2, h3 {
@@ -51,44 +45,9 @@ button, a, [role='tab'], summary {
     transform: scale(0.97);
   }
 
-  /* Chamfered corners for primary actions and HUD chips. */
-  .chamfer {
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-  }
-  .chamfer-sm {
-    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-  }
-
-  /* HUD frame: corner brackets drawn with pseudo-elements. */
-  .hud {
-    position: relative;
-  }
-  .hud::before,
-  .hud::after {
-    content: '';
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    pointer-events: none;
-    border-color: rgb(63 227 242 / 0.7);
-  }
-  .hud::before {
-    top: -1px;
-    left: -1px;
-    border-top: 2px solid;
-    border-left: 2px solid;
-    border-top-left-radius: 12px;
-  }
-  .hud::after {
-    bottom: -1px;
-    right: -1px;
-    border-bottom: 2px solid;
-    border-right: 2px solid;
-    border-bottom-right-radius: 12px;
-  }
-
-  .text-glow {
-    text-shadow: 0 0 24px rgb(130 87 255 / 0.55);
+  /* Hexagon frame for achievement badges. */
+  .hex {
+    clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
   }
 
   /* Modal enter: from 95% scale + transparent, centered origin (modals are not anchored to a trigger). */

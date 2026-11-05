@@ -81,10 +81,10 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
         <div>
           <div className="mb-1 flex items-center justify-between">
             <span className="text-sm font-medium">Description (Markdown)</span>
-            <button type="button" className="font-display text-xs font-semibold uppercase tracking-wider text-neon-300" onClick={() => setPreview(!preview)}>{preview ? 'Edit' : 'Preview'}</button>
+            <button type="button" className="font-display text-xs font-semibold text-brand-700" onClick={() => setPreview(!preview)}>{preview ? 'Edit' : 'Preview'}</button>
           </div>
           {preview ? (
-            <div className="min-h-[12rem] rounded-lg border border-slate-200 p-3 dark:border-slate-700"><Markdown>{description || '_Nothing yet_'}</Markdown></div>
+            <div className="min-h-[12rem] rounded-md p-3 border border-slate-300"><Markdown>{description || '_Nothing yet_'}</Markdown></div>
           ) : (
             <textarea className={`${inputClass} h-56 font-mono text-xs`} value={description} onChange={(e) => setDescription(e.target.value)} required />
           )}
@@ -108,7 +108,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
           <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display text-lg font-bold uppercase text-white">Test cases</h2>
+                <h2 className="font-display text-lg font-bold text-slate-900">Test cases</h2>
                 <p className="text-xs text-slate-500">Samples are shown to participants; the rest stay hidden. Output is compared ignoring trailing whitespace.</p>
               </div>
               <Button type="button" size="sm" variant="secondary" onClick={() => setTests([...tests, { input: '', expectedOutput: '', isSample: false }])}>
@@ -116,12 +116,12 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
               </Button>
             </div>
             {tests.map((t, i) => (
-              <div key={i} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+              <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-medium">Test {i + 1}</span>
                   <div className="flex items-center gap-3">
                     <label className="flex items-center gap-1.5"><input type="checkbox" checked={t.isSample} onChange={(e) => updateTest(i, { isSample: e.target.checked })} /> Sample</label>
-                    <button type="button" aria-label={`Remove test ${i + 1}`} onClick={() => setTests(tests.filter((_, j) => j !== i))} className="text-slate-400 hover:text-rose-600">
+                    <button type="button" aria-label={`Remove test ${i + 1}`} onClick={() => setTests(tests.filter((_, j) => j !== i))} className="text-slate-600 hover:text-rose-600">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -134,7 +134,7 @@ export function ProblemForm({ initial }: { initial?: Problem }) {
             ))}
           </Card>
           <Card className="space-y-4 p-5">
-            <h2 className="font-display text-lg font-bold uppercase text-white">Starter code (optional)</h2>
+            <h2 className="font-display text-lg font-bold text-slate-900">Starter code (optional)</h2>
             {LANGS.map((l) => (
               <Field key={l} label={LANGUAGE_LABELS[l]}>
                 <textarea className={`${inputClass} h-28 font-mono text-xs`} value={starter[l] ?? ''} onChange={(e) => setStarter({ ...starter, [l]: e.target.value })} />

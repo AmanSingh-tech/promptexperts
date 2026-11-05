@@ -39,12 +39,12 @@ export function CodeHistory({ events }: { events: SessionEvent[] }) {
                 onClick={() => isSnap && setSelected(snapIndex)}
                 className={cx(
                   'press flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left text-xs',
-                  isSnap && snapIndex === selected ? 'bg-neon-400/10 shadow-[inset_2px_0_0_rgb(63_227_242)]' : isSnap ? 'hover:bg-slate-800/70' : 'cursor-default'
+                  isSnap && snapIndex === selected ? 'bg-brand-500/10' : isSnap ? 'hover:bg-slate-100' : 'cursor-default'
                 )}
               >
-                <Icon className={cx('mt-0.5 h-3.5 w-3.5 shrink-0', e.type === 'PASTE' ? ((e.lines ?? 0) >= 8 ? 'text-amber-400' : 'text-slate-500') : 'text-neon-400')} aria-hidden />
+                <Icon className={cx('mt-0.5 h-3.5 w-3.5 shrink-0', e.type === 'PASTE' ? ((e.lines ?? 0) >= 8 ? 'text-amber-700' : 'text-slate-500') : 'text-brand-700')} aria-hidden />
                 <span className="min-w-0">
-                  <span className="block font-display font-bold uppercase tracking-wider text-slate-200">
+                  <span className="block font-display font-bold text-slate-800">
                     {e.type === 'PASTE' ? `Paste · ${e.lines} lines` : e.type === 'RUN' ? 'Run' : 'Submit'}
                   </span>
                   <span className="block font-mono text-slate-500">
@@ -62,11 +62,11 @@ export function CodeHistory({ events }: { events: SessionEvent[] }) {
         {current ? (
           <>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-display font-bold uppercase tracking-wider text-slate-300">
+              <span className="font-display font-bold text-slate-700">
                 Snapshot {selected + 1} of {snapshots.length} · {time(current.createdAt)}
               </span>
               <span className="font-mono">
-                <span className="text-xp-400">+{added}</span> <span className="text-rose-400">−{removed}</span>
+                <span className="text-brand-700">+{added}</span> <span className="text-rose-700">−{removed}</span>
                 <span className="text-slate-500">{previous ? ' vs previous' : ' (first snapshot)'}</span>
               </span>
             </div>
@@ -77,28 +77,28 @@ export function CodeHistory({ events }: { events: SessionEvent[] }) {
               value={selected}
               onChange={(e) => setSelected(Number(e.target.value))}
               aria-label="Scrub through snapshots"
-              className="mb-3 w-full accent-neon-400"
+              className="mb-3 w-full accent-brand-600"
               disabled={snapshots.length < 2}
             />
-            <pre className="max-h-[55vh] overflow-auto rounded-lg bg-[#0b0c15] py-3 font-mono text-xs leading-relaxed shadow-[inset_0_0_0_1px_rgb(160_166_196_/_0.1)]">
+            <pre className="max-h-[55vh] overflow-auto rounded-md border border-slate-200 bg-white py-3 font-mono text-xs leading-relaxed">
               {diff.map((d, i) => (
                 <div
                   key={i}
                   className={cx(
                     'px-4',
-                    d.kind === 'add' && 'bg-xp-400/10 text-xp-300',
-                    d.kind === 'del' && 'bg-rose-500/10 text-rose-300 line-through decoration-rose-400/40',
-                    d.kind === 'same' && 'text-slate-300'
+                    d.kind === 'add' && 'bg-brand-500/10 text-brand-700',
+                    d.kind === 'del' && 'bg-rose-500/10 text-rose-700 line-through decoration-rose-400/40',
+                    d.kind === 'same' && 'text-slate-700'
                   )}
                 >
-                  <span className="mr-3 select-none text-slate-600">{d.kind === 'add' ? '+' : d.kind === 'del' ? '−' : ' '}</span>
+                  <span className="mr-3 select-none text-slate-400">{d.kind === 'add' ? '+' : d.kind === 'del' ? '−' : ' '}</span>
                   {d.text || ' '}
                 </div>
               ))}
             </pre>
           </>
         ) : (
-          <p className="text-sm text-slate-400">No code snapshots were recorded for this attempt.</p>
+          <p className="text-sm text-slate-600">No code snapshots were recorded for this attempt.</p>
         )}
       </div>
     </div>

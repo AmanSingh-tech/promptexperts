@@ -22,11 +22,11 @@ export function LiveStats() {
     ['Score from AI usage', '60%']
   ] as const;
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-slate-800/60 sm:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-slate-100 sm:grid-cols-4">
       {items.map(([label, value]) => (
-        <div key={label} className="bg-slate-950/80 px-4 py-4 text-center">
-          <dd className="font-mono text-2xl font-semibold tabular-nums text-white">{value ?? '–'}</dd>
-          <dt className="mt-1 font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</dt>
+        <div key={label} className="bg-slate-50 px-4 py-4 text-center">
+          <dd className="font-mono text-2xl font-semibold tabular-nums text-slate-900">{value ?? '–'}</dd>
+          <dt className="mt-1 font-display text-[11px] font-semibold text-slate-600">{label}</dt>
         </div>
       ))}
     </dl>
@@ -43,26 +43,26 @@ export function TopPlayers() {
   if (!rows) return <div className="h-32" />;
   if (!rows.length) {
     return (
-      <p className="rounded-xl border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
-        No ranked players yet. <Link href="/problems" className="text-neon-300 hover:underline">Be the first.</Link>
+      <p className="rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600">
+        No ranked players yet. <Link href="/problems" className="text-brand-700 hover:underline">Be the first.</Link>
       </p>
     );
   }
   return (
     <ol className="grid gap-4 sm:grid-cols-3">
       {rows.map((r, i) => (
-        <li key={r.userId} className="hud rounded-xl bg-slate-900/80 p-5 shadow-[0_0_0_1px_rgb(160_166_196_/_0.12)]">
+        <li key={r.userId} className="rounded-md border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-3">
-            <span className={cx('chamfer-sm grid h-10 w-10 place-items-center bg-gradient-to-br font-display text-lg font-bold text-slate-950', PODIUM[i])}>
+            <span className={cx('grid h-10 w-10 place-items-center bg-gradient-to-br font-display text-lg font-bold text-white', PODIUM[i])}>
               {i === 0 ? <Crown className="h-5 w-5" /> : i + 1}
             </span>
             <div className="min-w-0">
-              <Link href={`/players/${r.username}`} className="block truncate font-semibold text-white hover:text-neon-300">{r.username}</Link>
-              <p className="font-display text-xs uppercase tracking-wider text-slate-400">Level {levelFor(r.totalPoints).level}</p>
+              <Link href={`/players/${r.username}`} className="block truncate font-semibold text-slate-900 hover:text-brand-700">{r.username}</Link>
+              <p className="font-display text-xs text-slate-600">Level {levelFor(r.totalPoints).level}</p>
             </div>
           </div>
-          <p className="mt-4 font-mono text-3xl font-semibold tabular-nums text-white">{r.totalPoints}<span className="ml-1 text-sm text-slate-400">XP</span></p>
-          <p className="mt-1 text-xs text-slate-400">AI usage avg <span className="font-mono text-neon-300">{r.avgAiUsageScore}</span></p>
+          <p className="mt-4 font-mono text-3xl font-semibold tabular-nums text-slate-900">{r.totalPoints}<span className="ml-1 text-sm text-slate-600">XP</span></p>
+          <p className="mt-1 text-xs text-slate-600">AI usage avg <span className="font-mono text-brand-700">{r.avgAiUsageScore}</span></p>
         </li>
       ))}
     </ol>

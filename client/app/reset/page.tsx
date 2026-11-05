@@ -39,16 +39,16 @@ function ResetForm() {
 
   if (!token) {
     return (
-      <Card className="w-full max-w-sm p-7 text-sm text-slate-300">
-        This reset link is incomplete. <Link href="/forgot" className="font-semibold text-neon-300 hover:underline">Request a new one</Link>.
+      <Card className="w-full max-w-sm p-7 text-sm text-slate-700">
+        This reset link is incomplete. <Link href="/forgot" className="font-semibold text-brand-700 hover:underline">Request a new one</Link>.
       </Card>
     );
   }
 
   return (
-    <Card hud className="w-full max-w-sm p-7">
-      <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Account recovery</p>
-      <h1 className="font-display text-2xl font-bold uppercase text-white">Choose a new password</h1>
+    <Card className="w-full max-w-sm p-7">
+      <p className="font-display text-xs font-semibold text-brand-700">Account recovery</p>
+      <h1 className="font-display text-2xl font-bold text-slate-900">Choose a new password</h1>
       <form onSubmit={submit} className="mt-5 space-y-4">
         <ErrorBox message={error} />
         <Field label="New password" hint="At least 8 characters">

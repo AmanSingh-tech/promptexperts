@@ -29,23 +29,23 @@ function SubmissionDetail({ id }: { id: string }) {
     <main className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">
-            {own ? 'Your run' : `Run by ${s.user.username}`} · {formatDate(s.submittedAt)}
+          <p className="font-display text-xs font-semibold text-brand-700">
+            {own ? 'Your submission' : `Submission by ${s.user.username}`} · {formatDate(s.submittedAt)}
           </p>
-          <h1 className="mt-1 font-display text-3xl font-bold uppercase text-white">
-            <Link href={`/problems/${s.problem.slug}`} className="hover:text-neon-300">{s.problem.title}</Link>
+          <h1 className="mt-1 font-display text-3xl font-bold text-slate-900">
+            <Link href={`/problems/${s.problem.slug}`} className="hover:text-brand-700">{s.problem.title}</Link>
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <DifficultyBadge value={s.problem.difficulty} />
             <StatusBadge value={s.status} />
             {s.problem.type === 'CODE' && (
-              <span className="font-mono text-sm text-slate-400">{s.passedCount}/{s.totalCount} tests · auto score {s.autoScore}</span>
+              <span className="font-mono text-sm text-slate-600">{s.passedCount}/{s.totalCount} tests · auto score {s.autoScore}</span>
             )}
           </div>
         </div>
         <div className="flex gap-2">
           {isStaff(user) && !own && <LinkButton href={`/review/${s.id}`} variant="secondary">{s.evaluation ? 'Edit review' : 'Review'}</LinkButton>}
-          {own && <LinkButton href={`/problems/${s.problem.slug}`}><RotateCcw className="h-4 w-4" /> Rematch</LinkButton>}
+          {own && <LinkButton href={`/problems/${s.problem.slug}`}><RotateCcw className="h-4 w-4" /> Solve again</LinkButton>}
         </div>
       </div>
 
@@ -55,15 +55,15 @@ function SubmissionDetail({ id }: { id: string }) {
           {s.evaluation ? (
             <ScoreCard evaluation={s.evaluation} reviews={s.reviews} />
           ) : (
-            <Card hud className="p-5 text-sm">
-              <Hourglass className="mb-3 h-6 w-6 text-neon-400" />
-              <p className="font-display text-lg font-bold uppercase text-white">Awaiting review</p>
+            <Card className="p-5 text-sm">
+              <Hourglass className="mb-3 h-6 w-6 text-brand-700" />
+              <p className="font-display text-lg font-bold text-slate-900">Awaiting review</p>
               {s.reviewProgress.required > 1 && (
-                <p className="mt-1 font-mono text-xs text-neon-300">
+                <p className="mt-1 font-mono text-xs text-brand-700">
                   {Math.min(s.reviewProgress.count, s.reviewProgress.required)} of {s.reviewProgress.required} reviews done
                 </p>
               )}
-              <p className="mt-2 text-slate-400">
+              <p className="mt-2 text-slate-600">
                 A reviewer will score your AI usage on efficiency, learning, transparency and innovation.
                 {s.problem.type === 'CODE'
                   ? ` Your solution score is already locked in from the tests: ${s.autoScore}/100.`

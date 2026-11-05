@@ -16,11 +16,11 @@ export interface Tier {
 
 // Tier reflects quality (average final score), not volume; level reflects volume.
 export const TIERS: Tier[] = [
-  { name: 'Diamond', min: 90, className: 'text-neon-300 border-neon-400/40 bg-neon-400/10' },
-  { name: 'Platinum', min: 75, className: 'text-brand-200 border-brand-400/40 bg-brand-500/10' },
-  { name: 'Gold', min: 60, className: 'text-amber-300 border-amber-400/40 bg-amber-400/10' },
-  { name: 'Silver', min: 40, className: 'text-slate-200 border-slate-400/40 bg-slate-400/10' },
-  { name: 'Bronze', min: 0, className: 'text-orange-300 border-orange-500/40 bg-orange-500/10' }
+  { name: 'Diamond', min: 90, className: 'text-sky-700 border-sky-300 bg-sky-50' },
+  { name: 'Platinum', min: 75, className: 'text-indigo-700 border-indigo-300 bg-indigo-50' },
+  { name: 'Gold', min: 60, className: 'text-amber-800 border-amber-300 bg-amber-50' },
+  { name: 'Silver', min: 40, className: 'text-slate-700 border-slate-300 bg-slate-100' },
+  { name: 'Bronze', min: 0, className: 'text-orange-800 border-orange-300 bg-orange-50' }
 ];
 
 export function tierFor(avgFinalScore: number, evaluated: number): Tier | null {

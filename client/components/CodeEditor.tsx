@@ -4,23 +4,23 @@ import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 import { Spinner } from './ui';
 
-const defineArenaTheme: BeforeMount = (monaco) => {
-  monaco.editor.defineTheme('arena', {
-    base: 'vs-dark',
+const defineEditorTheme: BeforeMount = (monaco) => {
+  monaco.editor.defineTheme('practice', {
+    base: 'vs',
     inherit: true,
     rules: [
-      { token: 'comment', foreground: '7a81a3', fontStyle: 'italic' },
-      { token: 'keyword', foreground: 'ad94ff' },
-      { token: 'string', foreground: 'bdf043' },
-      { token: 'number', foreground: '7cf0fb' }
+      { token: 'comment', foreground: '5f6f78', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '1d4ed8' },
+      { token: 'string', foreground: '116b33' },
+      { token: 'number', foreground: 'b45309' }
     ],
     colors: {
-      'editor.background': '#0b0c15',
-      'editor.lineHighlightBackground': '#161929',
-      'editorLineNumber.foreground': '#4a5070',
-      'editorLineNumber.activeForeground': '#3fe3f2',
-      'editorCursor.foreground': '#3fe3f2',
-      'editor.selectionBackground': '#5a2bd866'
+      'editor.background': '#ffffff',
+      'editor.lineHighlightBackground': '#f3f7f7',
+      'editorLineNumber.foreground': '#8d9ca4',
+      'editorLineNumber.activeForeground': '#116b33',
+      'editorCursor.foreground': '#116b33',
+      'editor.selectionBackground': '#a8e3bf88'
     }
   });
 };
@@ -58,8 +58,8 @@ export function CodeEditor({
       // overwrite newer text when typing fast. Remount (via `key`) to load different content.
       defaultValue={value}
       onChange={(v) => onChange?.(v ?? '')}
-      beforeMount={defineArenaTheme}
-      theme="arena"
+      beforeMount={defineEditorTheme}
+      theme="practice"
       loading={<Spinner />}
       options={{
         readOnly,

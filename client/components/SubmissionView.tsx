@@ -25,7 +25,7 @@ export function SubmissionTabs({ submission, defaultTab = 'answer' }: { submissi
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 px-2" role="tablist">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 px-2" role="tablist">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -33,8 +33,8 @@ export function SubmissionTabs({ submission, defaultTab = 'answer' }: { submissi
             aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
             className={cx(
-              'press whitespace-nowrap border-b-2 px-3 py-3 font-display text-xs font-bold uppercase tracking-wider',
-              tab === t.id ? 'border-neon-400 text-white' : 'border-transparent text-slate-400 hover:text-white'
+              'press whitespace-nowrap border-b-2 px-3 py-3 font-display text-xs font-bold',
+              tab === t.id ? 'border-brand-500 text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'
             )}
           >
             {t.label}
@@ -44,7 +44,7 @@ export function SubmissionTabs({ submission, defaultTab = 'answer' }: { submissi
       <div className="p-4">
         {tab === 'answer' &&
           (isCode ? (
-            <pre className="max-h-[70vh] overflow-auto rounded-lg bg-[#0b0c15] p-4 font-mono text-xs leading-relaxed text-slate-100 shadow-[inset_0_0_0_1px_rgb(160_166_196_/_0.1)]">{submission.code}</pre>
+            <pre className="max-h-[70vh] overflow-auto rounded-md border border-slate-200 bg-white p-4 font-mono text-xs leading-relaxed text-slate-900">{submission.code}</pre>
           ) : (
             <Markdown>{submission.code}</Markdown>
           ))}

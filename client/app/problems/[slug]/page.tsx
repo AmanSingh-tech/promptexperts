@@ -4,7 +4,7 @@ import { Suspense, use, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Play, RotateCcw, Send, Terminal, Trophy } from 'lucide-react';
+import { ChevronRight, Play, RotateCcw, Send, Trophy } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { plural } from '@/lib/game';
@@ -191,30 +191,30 @@ function Workspace({ slug }: { slug: string }) {
     <div className="h-full overflow-y-auto px-5 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <DifficultyBadge value={problem.difficulty} />
-        <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{CATEGORY_LABELS[problem.category]}</Badge>
-        <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{isCode ? 'Code' : 'Written answer'}</Badge>
+        <Badge className="bg-slate-100 text-slate-700">{CATEGORY_LABELS[problem.category]}</Badge>
+        <Badge className="bg-slate-100 text-slate-700">{isCode ? 'Code' : 'Written answer'}</Badge>
       </div>
-      <h1 className="mt-3 font-display text-2xl font-bold uppercase leading-tight text-white">{problem.title}</h1>
+      <h1 className="mt-3 text-xl font-bold leading-tight text-slate-900">{problem.title}</h1>
       <Markdown className="mt-4">{problem.description}</Markdown>
       {problem.constraints && (
         <>
-          <h2 className="mt-6 text-sm font-semibold">Constraints</h2>
-          <pre className="mt-2 whitespace-pre-wrap rounded-md bg-slate-100 p-3 font-mono text-xs dark:bg-slate-800">{problem.constraints}</pre>
+          <h2 className="mt-6 text-sm font-bold text-slate-900">Constraints</h2>
+          <pre className="mt-2 whitespace-pre-wrap rounded border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-900">{problem.constraints}</pre>
         </>
       )}
       {isCode && problem.testCases.length > 0 && (
         <>
-          <h2 className="mt-6 text-sm font-semibold">Sample tests</h2>
+          <h2 className="mt-6 text-sm font-bold text-slate-900">Sample tests</h2>
           <div className="mt-2 space-y-3">
             {problem.testCases.map((t, i) => (
               <div key={t.id} className="grid gap-2 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs text-slate-500">Input {i + 1}</p>
-                  <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800">{t.input}</pre>
+                  <p className="text-xs font-semibold text-slate-600">Sample Input {i}</p>
+                  <pre className="mt-1 max-h-32 overflow-auto rounded border border-slate-200 bg-slate-50 p-2 font-mono text-xs text-slate-900">{t.input}</pre>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Output {i + 1}</p>
-                  <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800">{t.expectedOutput}</pre>
+                  <p className="text-xs font-semibold text-slate-600">Sample Output {i}</p>
+                  <pre className="mt-1 max-h-32 overflow-auto rounded border border-slate-200 bg-slate-50 p-2 font-mono text-xs text-slate-900">{t.expectedOutput}</pre>
                 </div>
               </div>
             ))}
@@ -232,46 +232,36 @@ function Workspace({ slug }: { slug: string }) {
 
   const workPane = (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+      <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
         {isCode ? (
           <select
             value={language}
             onChange={(e) => changeLanguage(e.target.value as Language)}
             aria-label="Language"
-            className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-base text-slate-100 sm:text-sm"
+            className="shrink-0 rounded border border-slate-300 bg-white px-2 py-1 text-base text-slate-900 sm:text-sm"
           >
             {LANGS.map((l) => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
           </select>
         ) : (
-          <div className="flex rounded-md border border-slate-300 p-0.5 text-sm dark:border-slate-600">
+          <div className="flex rounded-md p-0.5 text-sm border border-slate-400">
             {['Write', 'Preview'].map((label, i) => (
               <button
                 key={label}
                 onClick={() => setPreview(i === 1)}
-                className={cx('rounded px-2.5 py-0.5', preview === (i === 1) ? 'bg-slate-200 dark:bg-slate-700' : 'text-slate-500')}
+                className={cx('rounded px-2.5 py-0.5', preview === (i === 1) ? 'bg-slate-200' : 'text-slate-500')}
               >
                 {label}
               </button>
             ))}
           </div>
         )}
-        <span className="text-xs text-slate-500">
+        <span className="min-w-0 truncate text-xs text-slate-500">
           Attempt started {new Date(session.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           {isCode && ` · ${plural(session.runCount, 'run')}`}
         </span>
-        <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="ghost" onClick={newAttempt} title="Discard this attempt and start over">
-            <RotateCcw className="h-4 w-4" /> <span className="hidden xl:inline">New attempt</span>
-          </Button>
-          {isCode && (
-            <Button size="sm" variant="secondary" onClick={run} loading={running} disabled={!code.trim()}>
-              {!running && <Play className="h-4 w-4" />} Run
-            </Button>
-          )}
-          <Button size="sm" variant="success" onClick={submit} loading={submitting} disabled={!code.trim()}>
-            {!submitting && <Send className="h-4 w-4" />} Submit
-          </Button>
-        </div>
+        <Button size="sm" variant="ghost" className="ml-auto shrink-0" onClick={newAttempt} title="Discard this attempt and start over">
+          <RotateCcw className="h-4 w-4" /> <span className="hidden xl:inline">New attempt</span>
+        </Button>
       </div>
 
       <div className="min-h-0 flex-1">
@@ -284,29 +274,40 @@ function Workspace({ slug }: { slug: string }) {
         )}
       </div>
 
-      {(isCode || actionError) && (
-        <div className="max-h-[45%] overflow-y-auto border-t border-slate-200 p-3 dark:border-slate-800">
+      {(result || (isCode && useCustom) || actionError) && (
+        <div className="max-h-[45%] overflow-y-auto border-t border-slate-200 p-3">
           <ErrorBox message={actionError} />
-          {isCode && (
-            <>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={useCustom} onChange={(e) => setUseCustom(e.target.checked)} />
-                <Terminal className="h-4 w-4 text-slate-500" /> Run with custom input instead of the samples
-              </label>
-              {useCustom && (
-                <textarea
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  rows={3}
-                  aria-label="Custom input"
-                  className="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 p-2 font-mono text-base sm:text-xs"
-                />
-              )}
-              {result && <div className="mt-3"><TestResults result={result} /></div>}
-            </>
+          {isCode && useCustom && (
+            <textarea
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              rows={3}
+              aria-label="Custom input"
+              className="w-full rounded border border-slate-300 bg-white p-2 font-mono text-base sm:text-xs"
+            />
           )}
+          {result && <div className="mt-3 first:mt-0"><TestResults result={result} /></div>}
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
+        {isCode && (
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={useCustom} onChange={(e) => setUseCustom(e.target.checked)} />
+            Test against custom input
+          </label>
+        )}
+        <div className="ml-auto flex gap-2">
+          {isCode && (
+            <Button size="sm" variant="secondary" onClick={run} loading={running} disabled={!code.trim()}>
+              {!running && <Play className="h-4 w-4" />} Run Code
+            </Button>
+          )}
+          <Button size="sm" onClick={submit} loading={submitting} disabled={!code.trim()}>
+            {!submitting && <Send className="h-4 w-4" />} {isCode ? 'Submit Code' : 'Submit Answer'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 
@@ -316,14 +317,14 @@ function Workspace({ slug }: { slug: string }) {
     <div
       className={cx(
         'flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-sm',
-        countsForContest ? 'border-xp-400/30 bg-xp-400/10 text-xp-100' : 'border-slate-800 bg-slate-900 text-slate-300'
+        countsForContest ? 'border-brand-200 bg-brand-50 text-brand-800' : 'border-slate-200 bg-white text-slate-700'
       )}
     >
-      <Trophy className={cx('h-4 w-4 shrink-0', countsForContest ? 'text-xp-400' : 'text-slate-500')} aria-hidden />
-      <Link href={`/contests/${contest.slug}`} className="font-display font-bold uppercase tracking-wider hover:underline">{contest.title}</Link>
+      <Trophy className={cx('h-4 w-4 shrink-0', countsForContest ? 'text-brand-700' : 'text-slate-500')} aria-hidden />
+      <Link href={`/contests/${contest.slug}`} className="font-display font-bold hover:underline">{contest.title}</Link>
       {contest.state === 'LIVE' && contest.joined && (
         <span>
-          Counts toward standings · ends in <Countdown to={contest.endsAt} onDone={loadContest} className="font-mono tabular-nums text-white" />
+          Counts toward standings · ends in <Countdown to={contest.endsAt} onDone={loadContest} className="font-mono tabular-nums text-slate-900" />
         </span>
       )}
       {contest.state === 'LIVE' && !contest.joined && (
@@ -333,34 +334,39 @@ function Workspace({ slug }: { slug: string }) {
         </>
       )}
       {contest.state === 'ENDED' && <span>This contest has ended, so this run is practice.</span>}
-      {contest.state === 'UPCOMING' && <span>Starts in <Countdown to={contest.startsAt} onDone={loadContest} className="font-mono tabular-nums text-white" /></span>}
+      {contest.state === 'UPCOMING' && <span>Starts in <Countdown to={contest.startsAt} onDone={loadContest} className="font-mono tabular-nums text-slate-900" /></span>}
     </div>
   );
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1 border-b border-slate-200 bg-white px-4 py-2 text-sm text-slate-600">
+        <Link href="/problems" className="hover:text-brand-700">Practice</Link>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+        <span className="truncate font-medium text-slate-900">{problem.title}</span>
+      </nav>
       {contestBanner}
-      <div className="flex border-b border-slate-200 lg:hidden dark:border-slate-800" role="tablist">
+      <div className="flex lg:hidden border-b border-slate-200" role="tablist">
         {(['problem', 'work', 'ai'] as Pane[]).map((p) => (
           <button
             key={p}
             role="tab"
             aria-selected={pane === p}
             onClick={() => setPane(p)}
-            className={cx('press flex-1 py-2.5 font-display text-xs font-bold uppercase tracking-wider', pane === p ? 'border-b-2 border-neon-400 text-white' : 'text-slate-400')}
+            className={cx('press flex-1 py-2.5 font-display text-xs font-bold', pane === p ? 'border-b-2 border-brand-500 text-slate-900' : 'text-slate-600')}
           >
             {p === 'problem' ? 'Problem' : p === 'work' ? (isCode ? 'Code' : 'Answer') : `AI (${session.logs.length})`}
           </button>
         ))}
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)]">
-        <section className={cx('min-h-0 border-r border-slate-800 bg-slate-950/70', pane !== 'problem' && 'hidden lg:block')}>
+        <section className={cx('min-h-0 border-r border-slate-200 bg-white', pane !== 'problem' && 'hidden lg:block')}>
           {problemPane}
         </section>
-        <section className={cx('min-h-0 border-r border-slate-800 bg-[#0b0c15]', pane !== 'work' && 'hidden lg:block')}>
+        <section className={cx('min-h-0 border-r border-slate-200 bg-white', pane !== 'work' && 'hidden lg:block')}>
           {workPane}
         </section>
-        <section className={cx('min-h-0 bg-slate-950/80', pane !== 'ai' && 'hidden lg:block')}>{aiPane}</section>
+        <section className={cx('min-h-0 bg-white', pane !== 'ai' && 'hidden lg:block')}>{aiPane}</section>
       </div>
     </div>
   );

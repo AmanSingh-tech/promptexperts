@@ -24,11 +24,11 @@ export function ScoreTrend({ timeline }: { timeline: MyStats['timeline'] }) {
               if (!active || !payload?.length) return null;
               const row = payload[0].payload as (typeof data)[number];
               return (
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-md dark:border-slate-700 dark:bg-slate-900">
-                  <p className="font-semibold text-slate-100">#{row.n} · {row.problem}</p>
+                <div className="rounded-md px-3 py-2 text-xs shadow-md border border-slate-300 bg-white">
+                  <p className="font-semibold text-slate-900">#{row.n} · {row.problem}</p>
                   <p className="mb-1 text-slate-500">{new Date(row.date).toLocaleDateString()}</p>
                   {SERIES.map((s) => (
-                    <p key={s.key} className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                    <p key={s.key} className="flex items-center gap-2 text-slate-800">
                       <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
                       {s.name} <span className="ml-auto font-semibold tabular-nums">{row[s.key]}</span>
                     </p>

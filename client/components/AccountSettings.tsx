@@ -39,7 +39,7 @@ export function AccountSettings() {
 
   return (
     <Card className="mt-6 p-5">
-      <h2 className="font-display text-lg font-bold uppercase text-white">Account security</h2>
+      <h2 className="font-display text-lg font-bold text-slate-900">Account security</h2>
       <form onSubmit={changePassword} className="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <Field label="Current password">
           <input className={inputClass} type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
@@ -50,7 +50,7 @@ export function AccountSettings() {
         <Button type="submit" loading={saving}>Change password</Button>
       </form>
       <div className="mt-3"><ErrorBox message={error} /></div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4 text-sm text-slate-400">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-sm text-slate-600">
         <span>Lost a device? Sign out of every session at once.</span>
         <Button variant="secondary" size="sm" onClick={logoutEverywhere}>Sign out everywhere</Button>
       </div>

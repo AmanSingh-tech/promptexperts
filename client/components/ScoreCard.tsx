@@ -15,23 +15,23 @@ export function RubricBars({ values }: { values: Partial<Record<(typeof RUBRIC)[
         return (
           <div key={r.key}>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wider text-slate-100">
-                <Icon className="h-4 w-4 text-brand-300" aria-hidden /> {r.label}
+              <span className="flex items-center gap-2 font-display text-sm font-bold text-slate-900">
+                <Icon className="h-4 w-4 text-brand-700" aria-hidden /> {r.label}
               </span>
-              <span className="font-mono text-sm tabular-nums text-slate-300">{v ?? '–'}<span className="text-slate-500">/5</span></span>
+              <span className="font-mono text-sm tabular-nums text-slate-700">{v ?? '–'}<span className="text-slate-500">/5</span></span>
             </div>
             <div className="mt-1.5 grid grid-cols-5 gap-1" role="meter" aria-valuemin={1} aria-valuemax={5} aria-valuenow={v ?? undefined} aria-label={r.label}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <span
                   key={n}
                   className={cx(
-                    'chamfer-sm h-2',
-                    v != null && n <= v ? 'bg-gradient-to-r from-brand-500 to-neon-400 shadow-[0_0_10px_-2px_rgb(63_227_242_/_0.7)]' : 'bg-slate-800'
+                    'h-2',
+                    v != null && n <= v ? 'bg-brand-600' : 'bg-slate-100'
                   )}
                 />
               ))}
             </div>
-            <p className="mt-1 text-xs text-slate-400">{r.hint}</p>
+            <p className="mt-1 text-xs text-slate-600">{r.hint}</p>
           </div>
         );
       })}
@@ -41,14 +41,14 @@ export function RubricBars({ values }: { values: Partial<Record<(typeof RUBRIC)[
 
 export function ScoreCard({ evaluation, reviews = [] }: { evaluation: Evaluation; reviews?: Review[] }) {
   return (
-    <Card hud className="p-5">
-      <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Match result</p>
+    <Card className="p-5">
+      <p className="font-display text-xs font-semibold text-brand-700">Result</p>
       <div className="mt-2 flex items-end justify-between">
         <div>
           <p className={cx('font-mono text-6xl font-semibold leading-none tabular-nums', scoreTone(evaluation.finalScore))}>
             <AnimatedNumber value={evaluation.finalScore} />
           </p>
-          <p className="mt-1 font-display text-xs font-semibold uppercase tracking-wider text-slate-400">Final score · XP earned</p>
+          <p className="mt-1 font-display text-xs font-semibold text-slate-600">Final score · XP earned</p>
         </div>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-2">
@@ -56,8 +56,8 @@ export function ScoreCard({ evaluation, reviews = [] }: { evaluation: Evaluation
           ['Solution', evaluation.solutionScore, '40%'],
           ['AI usage', evaluation.aiUsageScore, '60%']
         ].map(([label, value, weight]) => (
-          <div key={label as string} className="rounded-lg bg-slate-950/70 px-3 py-2">
-            <p className="font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label} <span className="text-slate-500">({weight})</span></p>
+          <div key={label as string} className="rounded-md bg-slate-50 px-3 py-2">
+            <p className="font-display text-[11px] font-semibold text-slate-600">{label} <span className="text-slate-500">({weight})</span></p>
             <p className={cx('font-mono text-2xl font-semibold tabular-nums', scoreTone(value as number))}><AnimatedNumber value={value as number} /></p>
           </div>
         ))}
@@ -66,24 +66,24 @@ export function ScoreCard({ evaluation, reviews = [] }: { evaluation: Evaluation
         <RubricBars values={evaluation} />
       </div>
       {reviews.length > 1 && (
-        <p className="mt-6 font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        <p className="mt-6 font-display text-[11px] font-semibold text-slate-600">
           Averaged from {reviews.length} independent reviews
         </p>
       )}
       {reviews.length > 0
         ? reviews.map((r) => (
-            <div key={r.id} className="mt-3 rounded-lg border-l-2 border-neon-400 bg-slate-950/70 p-3 text-sm">
-              <p className="mb-1 flex justify-between font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div key={r.id} className="mt-3 rounded-md border-l-2 border-brand-500 bg-slate-50 p-3 text-sm">
+              <p className="mb-1 flex justify-between font-display text-[11px] font-semibold text-slate-600">
                 <span>Reviewer notes · {r.reviewer.username}</span>
                 {reviews.length > 1 && <span className="font-mono normal-case">{[r.aiEfficiency, r.aiLearning, r.aiTransparency, r.aiInnovation].join(' · ')}</span>}
               </p>
-              <p className="whitespace-pre-wrap text-slate-200">{r.notes}</p>
+              <p className="whitespace-pre-wrap text-slate-800">{r.notes}</p>
             </div>
           ))
         : evaluation.notes && (
-            <div className="mt-6 rounded-lg border-l-2 border-neon-400 bg-slate-950/70 p-3 text-sm">
-              <p className="mb-1 font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">Reviewer notes{evaluation.reviewer && ` · ${evaluation.reviewer.username}`}</p>
-              <p className="whitespace-pre-wrap text-slate-200">{evaluation.notes}</p>
+            <div className="mt-6 rounded-md border-l-2 border-brand-500 bg-slate-50 p-3 text-sm">
+              <p className="mb-1 font-display text-[11px] font-semibold text-slate-600">Reviewer notes{evaluation.reviewer && ` · ${evaluation.reviewer.username}`}</p>
+              <p className="whitespace-pre-wrap text-slate-800">{evaluation.notes}</p>
             </div>
           )}
     </Card>

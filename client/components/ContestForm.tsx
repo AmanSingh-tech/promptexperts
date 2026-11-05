@@ -79,38 +79,38 @@ export function ContestForm({ initial }: { initial?: ContestDetail }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
-          <h2 className="font-display text-lg font-bold uppercase text-white">Contest set ({selected.length})</h2>
-          <p className="mb-3 text-xs text-slate-400">Unpublished challenges stay hidden until the contest starts.</p>
-          {selected.length === 0 && <p className="text-sm text-slate-400">Pick challenges from the list.</p>}
+          <h2 className="font-display text-lg font-bold text-slate-900">Contest set ({selected.length})</h2>
+          <p className="mb-3 text-xs text-slate-600">Unpublished challenges stay hidden until the contest starts.</p>
+          {selected.length === 0 && <p className="text-sm text-slate-600">Pick challenges from the list.</p>}
           <ol className="space-y-2">
             {selected.map((id, i) => {
               const p = byId.get(id);
               return (
-                <li key={id} className="flex items-center gap-2 rounded-lg bg-slate-950/60 px-3 py-2 text-sm">
-                  <span className="font-display font-bold text-neon-300">{String.fromCharCode(65 + i)}</span>
-                  <span className="min-w-0 flex-1 truncate text-slate-100">{p?.title ?? id}</span>
-                  {p && !p.published && <Badge className="border-slate-600 bg-slate-800 text-slate-300">Hidden</Badge>}
-                  <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="press rounded p-1 text-slate-400 hover:text-white disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
-                  <button type="button" aria-label="Move down" disabled={i === selected.length - 1} onClick={() => move(i, 1)} className="press rounded p-1 text-slate-400 hover:text-white disabled:opacity-30"><ArrowDown className="h-4 w-4" /></button>
-                  <button type="button" aria-label="Remove" onClick={() => setSelected(selected.filter((x) => x !== id))} className="press rounded p-1 text-slate-400 hover:text-rose-300"><X className="h-4 w-4" /></button>
+                <li key={id} className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
+                  <span className="font-display font-bold text-brand-700">{String.fromCharCode(65 + i)}</span>
+                  <span className="min-w-0 flex-1 truncate text-slate-900">{p?.title ?? id}</span>
+                  {p && !p.published && <Badge className="border border-slate-400 bg-slate-100 text-slate-700">Hidden</Badge>}
+                  <button type="button" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="press rounded p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Move down" disabled={i === selected.length - 1} onClick={() => move(i, 1)} className="press rounded p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30"><ArrowDown className="h-4 w-4" /></button>
+                  <button type="button" aria-label="Remove" onClick={() => setSelected(selected.filter((x) => x !== id))} className="press rounded p-1 text-slate-600 hover:text-rose-700"><X className="h-4 w-4" /></button>
                 </li>
               );
             })}
           </ol>
         </Card>
         <Card className="p-5">
-          <h2 className="mb-3 font-display text-lg font-bold uppercase text-white">All challenges</h2>
+          <h2 className="mb-3 font-display text-lg font-bold text-slate-900">All challenges</h2>
           <ul className="max-h-96 space-y-1 overflow-y-auto">
             {problems.map((p) => (
               <li key={p.id}>
-                <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-slate-800/60">
+                <label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-slate-100">
                   <input
                     type="checkbox"
                     checked={selected.includes(p.id)}
                     onChange={(e) => setSelected(e.target.checked ? [...selected, p.id] : selected.filter((x) => x !== p.id))}
                   />
-                  <span className="min-w-0 flex-1 truncate text-slate-200">{p.title}</span>
-                  {!p.published && <Badge className="border-slate-600 bg-slate-800 text-slate-300">Hidden</Badge>}
+                  <span className="min-w-0 flex-1 truncate text-slate-800">{p.title}</span>
+                  {!p.published && <Badge className="border border-slate-400 bg-slate-100 text-slate-700">Hidden</Badge>}
                   <DifficultyBadge value={p.difficulty} />
                 </label>
               </li>

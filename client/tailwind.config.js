@@ -1,27 +1,26 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.ts'],
   darkMode: 'class',
   future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {
-        // Cool, slightly violet neutrals tuned for a dark arena UI (500+ keeps >=4.5:1 on 900).
+        // Cool grey neutrals on a near-white page. 500+ keeps >=4.5:1 on white and on 50.
         slate: {
-          50: '#f6f7fb', 100: '#eceef6', 200: '#dadded', 300: '#c0c5dc', 400: '#a0a6c4',
-          500: '#7a81a3', 600: '#4a5070', 700: '#2a2f48', 800: '#1a1d2e', 900: '#11131f', 950: '#090a11'
+          50: '#f3f7f7', 100: '#e7eeef', 200: '#d6dfe2', 300: '#b8c4ca', 400: '#8d9ca4',
+          500: '#5f6f78', 600: '#4f5e67', 700: '#39424e', 800: '#2a333d', 900: '#1c2530', 950: '#0e141e'
         },
+        // Green accent. 600 is the lightest shade that keeps white text at >=4.5:1.
         brand: {
-          50: '#f3efff', 100: '#e6deff', 200: '#cdbdff', 300: '#ad94ff', 400: '#9775ff',
-          500: '#8257ff', 600: '#7040f5', 700: '#5a2bd8', 800: '#4521a8', 900: '#2f1878'
-        },
-        neon: { 300: '#7cf0fb', 400: '#3fe3f2', 500: '#16c8da' },
-        xp: { 300: '#d4f77a', 400: '#bdf043', 500: '#9fd81b' }
+          50: '#ecf9f1', 100: '#d3f1de', 200: '#a8e3bf', 300: '#6fd09a', 400: '#39bf6f',
+          500: '#1ba94c', 600: '#15803d', 700: '#116b33', 800: '#0e5529', 900: '#0b4522'
+        }
       },
-      borderColor: ({ theme }) => ({ DEFAULT: theme('colors.slate.800') }),
+      borderColor: ({ theme }) => ({ DEFAULT: theme('colors.slate.200') }),
       fontFamily: {
         sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display)', 'var(--font-body)', 'sans-serif'],
+        display: ['var(--font-body)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace']
       },
       transitionTimingFunction: {
@@ -29,12 +28,10 @@ module.exports = {
         'in-out': 'cubic-bezier(0.77, 0, 0.175, 1)'
       },
       keyframes: {
-        rise: { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-        'grid-scroll': { from: { transform: 'translateY(0)' }, to: { transform: 'translateY(48px)' } }
+        rise: { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } }
       },
       animation: {
-        rise: 'rise 300ms cubic-bezier(0.23, 1, 0.32, 1) both',
-        'grid-scroll': 'grid-scroll 3s linear infinite'
+        rise: 'rise 300ms cubic-bezier(0.23, 1, 0.32, 1) both'
       }
     }
   },

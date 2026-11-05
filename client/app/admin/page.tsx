@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
+import { plural } from '@/lib/game';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, formatDate } from '@/lib/format';
@@ -86,7 +87,7 @@ function Admin() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-        kicker="Control room"
+       
         title="Admin"
         actions={
           <>
@@ -106,54 +107,54 @@ function Admin() {
             ['Claude tokens', (overview.inputTokens + overview.outputTokens).toLocaleString()]
           ].map(([k, v]) => (
             <Card key={k as string} className="p-4">
-              <p className="font-display text-[11px] font-semibold uppercase tracking-wider text-slate-400">{k}</p>
-              <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-white">{v}</p>
+              <p className="font-display text-[11px] font-semibold text-slate-600">{k}</p>
+              <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-slate-900">{v}</p>
             </Card>
           ))}
         </div>
       )}
       <div className="mb-4 flex gap-2">
         {(['problems', 'contests', 'users'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={cx('press chamfer-sm px-3 py-1 font-display text-xs font-semibold uppercase tracking-wider', tab === t ? 'bg-neon-400 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white')}>
+          <button key={t} onClick={() => setTab(t)} className={cx('press rounded px-3 py-1 text-sm font-medium capitalize', tab === t ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:text-slate-900')}>
             {t}
           </button>
         ))}
       </div>
       {!problems && !error && <Spinner />}
       {tab === 'problems' && problems && (
-        <Card className="divide-y divide-slate-100 dark:divide-slate-800">
+        <Card className="divide-slate-200">
           {problems.map((p) => (
             <div key={p.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">
                   <Link href={`/problems/${p.slug}`} className="hover:underline">{p.title}</Link>
-                  {!p.published && <Badge className="ml-2 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200">Draft</Badge>}
+                  {!p.published && <Badge className="ml-2 bg-slate-200 text-slate-800">Draft</Badge>}
                 </p>
-                <p className="text-xs text-slate-500">{p.type === 'CODE' ? 'Code' : 'Written'} · {CATEGORY_LABELS[p.category]} · {p.submissions} submissions</p>
+                <p className="text-xs text-slate-500">{p.type === 'CODE' ? 'Code' : 'Written'} · {CATEGORY_LABELS[p.category]} · {plural(p.submissions, 'submission')}</p>
               </div>
               <DifficultyBadge value={p.difficulty} />
-              <Link href={`/admin/problems/${p.id}`} aria-label={`Edit ${p.title}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><Pencil className="h-4 w-4" /></Link>
-              <button onClick={() => remove(p)} aria-label={`Delete ${p.title}`} className="rounded p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"><Trash2 className="h-4 w-4" /></button>
+              <Link href={`/admin/problems/${p.id}`} aria-label={`Edit ${p.title}`} className="rounded p-1.5 text-slate-500 hover:bg-slate-100"><Pencil className="h-4 w-4" /></Link>
+              <button onClick={() => remove(p)} aria-label={`Delete ${p.title}`} className="rounded p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-950/40"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </Card>
       )}
       {tab === 'contests' && contests && (
-        <Card className="divide-y divide-slate-800">
-          {!contests.length && <p className="px-4 py-6 text-sm text-slate-400">No contests yet.</p>}
+        <Card className="divide-y divide-slate-200">
+          {!contests.length && <p className="px-4 py-6 text-sm text-slate-600">No contests yet.</p>}
           {contests.map((c) => (
             <div key={c.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">
                   <Link href={`/contests/${c.slug}`} className="hover:underline">{c.title}</Link>
-                  {!c.published && <Badge className="ml-2 border-slate-600 bg-slate-800 text-slate-300">Draft</Badge>}
+                  {!c.published && <Badge className="ml-2 border border-slate-400 bg-slate-100 text-slate-700">Draft</Badge>}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {c.state.toLowerCase()} · {new Date(c.startsAt).toLocaleString()} → {new Date(c.endsAt).toLocaleString()} · {c.problemCount} challenges · {c.entrants} players
                 </p>
               </div>
-              <Link href={`/admin/contests/${c.id}`} aria-label={`Edit ${c.title}`} className="rounded p-1.5 text-slate-400 hover:bg-slate-800"><Pencil className="h-4 w-4" /></Link>
-              <button onClick={() => removeContest(c)} aria-label={`Delete ${c.title}`} className="rounded p-1.5 text-slate-400 hover:bg-rose-950/40 hover:text-rose-300"><Trash2 className="h-4 w-4" /></button>
+              <Link href={`/admin/contests/${c.id}`} aria-label={`Edit ${c.title}`} className="rounded p-1.5 text-slate-600 hover:bg-slate-100"><Pencil className="h-4 w-4" /></Link>
+              <button onClick={() => removeContest(c)} aria-label={`Delete ${c.title}`} className="rounded p-1.5 text-slate-600 hover:bg-rose-950/40 hover:text-rose-700"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </Card>
@@ -161,10 +162,10 @@ function Admin() {
       {tab === 'users' && users && (
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-800 text-left font-display text-[11px] uppercase tracking-wider text-slate-400">
+            <thead className="border-b border-slate-200 text-left font-display text-[11px] text-slate-600">
               <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Submissions</th><th className="px-4 py-3 text-right">Reviews</th><th className="px-4 py-3">Role</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-slate-200">
               {users.map((u) => (
                 <tr key={u.id}>
                   <td className="px-4 py-3"><p className="font-medium">{u.username}</p><p className="text-xs text-slate-500">{u.email}</p></td>
@@ -177,7 +178,7 @@ function Admin() {
                       disabled={u.id === me?.id}
                       onChange={(e) => setRole(u, e.target.value as Role)}
                       aria-label={`Role for ${u.username}`}
-                      className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-base text-slate-100 disabled:opacity-60 sm:text-sm"
+                      className="rounded-md border border-slate-300 bg-white px-2 py-1 text-base text-slate-900 disabled:opacity-60 sm:text-sm"
                     >
                       <option value="USER">User</option>
                       <option value="REVIEWER">Reviewer</option>
@@ -185,7 +186,7 @@ function Admin() {
                     </select>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => resetLink(u)} className="press inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-display text-xs font-semibold uppercase tracking-wider text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <button onClick={() => resetLink(u)} className="press inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-display text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">
                       <KeyRound className="h-3.5 w-3.5" /> Reset link
                     </button>
                   </td>

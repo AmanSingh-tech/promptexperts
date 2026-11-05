@@ -28,14 +28,14 @@ export default function ForgotPage() {
 
   return (
     <main className="flex justify-center px-4 py-20">
-      <Card hud className="w-full max-w-sm p-7">
-        <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">Account recovery</p>
-        <h1 className="font-display text-2xl font-bold uppercase text-white">Reset password</h1>
+      <Card className="w-full max-w-sm p-7">
+        <p className="font-display text-xs font-semibold text-brand-700">Account recovery</p>
+        <h1 className="font-display text-2xl font-bold text-slate-900">Reset password</h1>
         {sent ? (
-          <div className="mt-5 space-y-3 text-sm text-slate-300">
-            <MailCheck className="h-6 w-6 text-xp-400" />
-            <p>If an account uses <strong className="text-white">{email}</strong>, a reset link is on its way. It expires in 30 minutes.</p>
-            <Link href="/login" className="font-semibold text-neon-300 hover:underline">Back to sign in</Link>
+          <div className="mt-5 space-y-3 text-sm text-slate-700">
+            <MailCheck className="h-6 w-6 text-brand-700" />
+            <p>If an account uses <strong className="text-slate-900">{email}</strong>, a reset link is on its way. It expires in 30 minutes.</p>
+            <Link href="/login" className="font-semibold text-brand-700 hover:underline">Back to sign in</Link>
           </div>
         ) : (
           <form onSubmit={submit} className="mt-5 space-y-4">
@@ -44,8 +44,8 @@ export default function ForgotPage() {
               <input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
             </Field>
             <Button type="submit" loading={loading} className="w-full">Send reset link</Button>
-            <p className="text-center text-sm text-slate-400">
-              Remembered it? <Link href="/login" className="font-semibold text-neon-300 hover:underline">Sign in</Link>
+            <p className="text-center text-sm text-slate-600">
+              Remembered it? <Link href="/login" className="font-semibold text-brand-700 hover:underline">Sign in</Link>
             </p>
           </form>
         )}

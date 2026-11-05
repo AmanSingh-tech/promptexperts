@@ -54,8 +54,8 @@ export function SegmentedTabs<T extends string>({
         }}
         className={
           active
-            ? 'px-3.5 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-slate-950'
-            : 'press px-3.5 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-400'
+            ? 'px-3.5 py-1.5 font-display text-xs font-bold text-white'
+            : 'press px-3.5 py-1.5 font-display text-xs font-bold text-slate-600 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
         }
       >
         {o.label}
@@ -63,13 +63,13 @@ export function SegmentedTabs<T extends string>({
     ));
 
   return (
-    <div ref={container} className="relative inline-flex rounded-lg bg-slate-900/90 p-1 shadow-[0_0_0_1px_rgb(160_166_196_/_0.12)]">
+    <div ref={container} className="relative inline-flex rounded-md border border-slate-200 bg-white p-1">
       <div role="tablist" aria-label={label} className="flex">
         {row(false)}
       </div>
       <div
         aria-hidden
-        className="segment-clip pointer-events-none absolute flex rounded-md bg-neon-400"
+        className="segment-clip pointer-events-none absolute flex rounded-md bg-brand-600"
         style={{ clipPath: clip ?? 'inset(0 100% 0 0)', inset: PAD }}
       >
         {row(true)}

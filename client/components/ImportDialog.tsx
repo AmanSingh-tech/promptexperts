@@ -111,22 +111,22 @@ export function ImportDialog({ sessionId, onClose, onImported }: { sessionId: st
   }
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-title"
-        className="modal-panel hud max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-xl bg-slate-900 p-6 shadow-[0_0_0_1px_rgb(160_166_196_/_0.15),0_24px_80px_-20px_rgb(0_0_0_/_0.8)]"
+        className="modal-panel max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-md border border-slate-200 bg-white p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="import-title" className="font-display text-xl font-bold uppercase text-white">Import external AI log</h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <h2 id="import-title" className="font-display text-xl font-bold text-slate-900">Import external AI log</h2>
+            <p className="mt-1 text-sm text-slate-600">
               Upload an export file or paste the conversation. Imported messages are marked as such for reviewers.
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="press rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label="Close" className="press rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="mt-5 space-y-4">
@@ -147,15 +147,15 @@ export function ImportDialog({ sessionId, onClose, onImported }: { sessionId: st
               if (file) loadFile(file);
             }}
             className={cx(
-              'press flex w-full flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-5 text-center',
-              dragging ? 'border-neon-400 bg-neon-400/10' : 'border-slate-700 hover:border-slate-500 hover:bg-slate-800/50'
+              'press flex w-full flex-col items-center gap-1 rounded-md border border-dashed px-4 py-5 text-center',
+              dragging ? 'border-brand-500 bg-brand-500/10' : 'border border-slate-300 hover:border-slate-500 hover:bg-slate-100'
             )}
           >
-            <FileUp className="h-6 w-6 text-neon-400" aria-hidden />
-            <span className="font-display text-sm font-bold uppercase tracking-wider text-white">
+            <FileUp className="h-6 w-6 text-brand-700" aria-hidden />
+            <span className="font-display text-sm font-bold text-slate-900">
               {fileName ? `Loaded ${fileName}` : 'Drop a file or browse'}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-600">
               ChatGPT or Claude.ai export (<code>conversations.json</code>), or any .txt / .md transcript
             </span>
           </button>
@@ -186,8 +186,8 @@ export function ImportDialog({ sessionId, onClose, onImported }: { sessionId: st
           </Field>
 
           {conversations ? (
-            <p className="rounded-lg bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
-              Ready to import <strong className="text-white">{conversationLabel(conversations[picked], picked)}</strong>.
+            <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              Ready to import <strong className="text-slate-900">{conversationLabel(conversations[picked], picked)}</strong>.
             </p>
           ) : (
             <Field label="Transcript" hint={'Label each turn ("User:", "ChatGPT:", "Claude:"…) when pasting plain text.'}>

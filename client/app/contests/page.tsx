@@ -11,9 +11,9 @@ import { Countdown } from '@/components/Countdown';
 import { Badge, EmptyState, ErrorBox, PageHeader, Spinner, cx } from '@/components/ui';
 
 const STATE_BADGE: Record<ContestState, string> = {
-  LIVE: 'border-xp-400/40 bg-xp-400/10 text-xp-300',
-  UPCOMING: 'border-neon-400/40 bg-neon-400/10 text-neon-300',
-  ENDED: 'border-slate-600 bg-slate-800/60 text-slate-400'
+  LIVE: 'border-brand-500/40 bg-brand-500/10 text-brand-700',
+  UPCOMING: 'border-brand-500/40 bg-brand-500/10 text-brand-700',
+  ENDED: 'border border-slate-400 bg-slate-100 text-slate-600'
 };
 const SECTIONS: { state: ContestState; title: string }[] = [
   { state: 'LIVE', title: 'Live now' },
@@ -48,34 +48,34 @@ export default function ContestsPage() {
           if (!items.length) return null;
           return (
             <section key={state} className="mb-10">
-              <h2 className="mb-4 font-display text-lg font-bold uppercase text-white">{title}</h2>
+              <h2 className="mb-4 font-display text-lg font-bold text-slate-900">{title}</h2>
               <ul className="grid gap-4 md:grid-cols-2">
                 {items.map((c) => (
                   <li key={c.id}>
                     <Link
                       href={`/contests/${c.slug}`}
                       className={cx(
-                        'press flex h-full flex-col rounded-xl bg-slate-900/80 p-5 shadow-[0_0_0_1px_rgb(160_166_196_/_0.12)] hover:bg-slate-900',
-                        c.state === 'LIVE' && 'hud shadow-[0_0_0_1px_rgb(189_240_67_/_0.35),0_0_32px_-14px_rgb(189_240_67_/_0.6)]'
+                        'press flex h-full flex-col rounded-md border border-slate-200 bg-white p-5 hover:bg-slate-50',
+                        c.state === 'LIVE' && 'border-brand-500'
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <Badge className={STATE_BADGE[c.state]}>
-                          {c.state === 'LIVE' && <span className="h-1.5 w-1.5 rounded-full bg-xp-400" aria-hidden />}
-                          {c.state.toLowerCase()}
+                          {c.state === 'LIVE' && <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden />}
+                          {c.state[0] + c.state.slice(1).toLowerCase()}
                         </Badge>
-                        {c.joined && <Badge className="border-brand-400/40 bg-brand-500/10 text-brand-200">Joined</Badge>}
-                        {!c.published && <Badge className="border-slate-600 bg-slate-800 text-slate-300">Draft</Badge>}
+                        {c.joined && <Badge className="border-brand-400/40 bg-brand-500/10 text-brand-700">Joined</Badge>}
+                        {!c.published && <Badge className="border border-slate-400 bg-slate-100 text-slate-700">Draft</Badge>}
                       </div>
-                      <h3 className="mt-3 font-display text-xl font-bold uppercase text-white">{c.title}</h3>
-                      <p className="mt-1 line-clamp-2 text-sm text-slate-400">{c.description.replace(/[*_`#>[\]]/g, '')}</p>
-                      <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-1 pt-4 text-sm text-slate-300">
+                      <h3 className="mt-3 font-display text-xl font-bold text-slate-900">{c.title}</h3>
+                      <p className="mt-1 line-clamp-2 text-sm text-slate-600">{c.description.replace(/[*_`#>[\]]/g, '')}</p>
+                      <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-1 pt-4 text-sm text-slate-700">
                         {c.state === 'ENDED' ? (
                           <span className="flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-slate-500" /> Ended {when(c.endsAt)}</span>
                         ) : (
                           <span className="flex items-center gap-1.5">
                             <CalendarClock className="h-4 w-4 text-slate-500" /> {c.state === 'LIVE' ? 'Ends in' : 'Starts in'}{' '}
-                            <Countdown to={c.state === 'LIVE' ? c.endsAt : c.startsAt} className="font-mono tabular-nums text-white" />
+                            <Countdown to={c.state === 'LIVE' ? c.endsAt : c.startsAt} className="font-mono tabular-nums text-slate-900" />
                           </span>
                         )}
                         <span className="flex items-center gap-1.5"><Swords className="h-4 w-4 text-slate-500" /> {plural(c.problemCount, 'challenge')}</span>
