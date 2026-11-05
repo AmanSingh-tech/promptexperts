@@ -8,18 +8,23 @@ import { plural } from '@/lib/game';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, formatDate } from '@/lib/format';
-import type { ContestSummary, ProblemSummary, Role, User } from '@/lib/types';
+import type { ContestSummary, Season, ProblemSummary, Role, User } from '@/lib/types';
 import { RequireAuth } from '@/components/RequireAuth';
 import { useAuth } from '@/components/AuthProvider';
+import { SeasonsAdmin } from '@/components/SeasonsAdmin';
 import { Badge, Card, DifficultyBadge, ErrorBox, LinkButton, PageHeader, Spinner, cx } from '@/components/ui';
 
 interface Overview { users: number; problems: number; submissions: number; pendingReviews: number; sessions: number; inputTokens: number; outputTokens: number }
 type AdminUser = User & { createdAt: string; submissions: number; reviews: number };
 
+const TABS = ['problems', 'contests', 'seasons', 'users'] as const;
+type Tab = (typeof TABS)[number];
+
 function Admin() {
   const { user: me } = useAuth();
   const initialTab = useSearchParams().get('tab');
-  const [tab, setTab] = useState<'problems' | 'contests' | 'users'>(initialTab === 'contests' || initialTab === 'users' ? initialTab : 'problems');
+  const [tab, setTab] = useState<Tab>(TABS.includes(initialTab as Tab) ? (initialTab as Tab) : 'problems');
+  const [seasons, setSeasons] = useState<Season[] | null>(null);
   const [contests, setContests] = useState<ContestSummary[] | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
@@ -31,9 +36,11 @@ function Admin() {
       api<Overview>('/api/admin/overview'),
       api<ProblemSummary[]>('/api/problems'),
       api<AdminUser[]>('/api/admin/users'),
-      api<ContestSummary[]>('/api/contests')
+      api<ContestSummary[]>('/api/contests'),
+      api<Season[]>('/api/seasons')
     ])
-      .then(([o, p, u, c]) => {
+      .then(([o, p, u, c, s]) => {
+        setSeasons(s);
         setOverview(o);
         setProblems(p);
         setUsers(u);
@@ -114,7 +121,7 @@ function Admin() {
         </div>
       )}
       <div className="mb-4 flex gap-2">
-        {(['problems', 'contests', 'users'] as const).map((t) => (
+        {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)} className={cx('press rounded px-3 py-1 text-sm font-medium capitalize', tab === t ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:text-slate-900')}>
             {t}
           </button>
@@ -159,6 +166,7 @@ function Admin() {
           ))}
         </Card>
       )}
+      {tab === 'seasons' && seasons && <SeasonsAdmin seasons={seasons} onChange={setSeasons} />}
       {tab === 'users' && users && (
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">

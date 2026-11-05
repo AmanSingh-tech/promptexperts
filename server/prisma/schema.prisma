@@ -362,3 +362,15 @@ model JudgeLease {
 
   @@index([expiresAt])
 }
+
+// A named ranking window. XP and levels are lifetime; a season only filters the leaderboard.
+model Season {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  @@index([startsAt])
+}

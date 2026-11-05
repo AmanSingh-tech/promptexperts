@@ -6,7 +6,8 @@ import { Crown } from 'lucide-react';
 import { api, errorMessage } from '@/lib/api';
 import { CATEGORY_LABELS, DIFFICULTY_LABELS } from '@/lib/format';
 import { levelFor, plural, tierFor } from '@/lib/game';
-import type { Board, Category, Difficulty, LeaderboardResponse, LeaderboardRow, Period } from '@/lib/types';
+import type { Board, Category, Difficulty, LeaderboardResponse, LeaderboardRow, Period, Season } from '@/lib/types';
+import { Countdown } from '@/components/Countdown';
 import { useAuth } from '@/components/AuthProvider';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { TierBadge } from '@/components/TierBadge';
@@ -20,9 +21,14 @@ const BOARDS: { value: Board; label: string; metric: (r: LeaderboardRow) => numb
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All time' },
-  { value: 'month', label: '30 days' },
-  { value: 'week', label: '7 days' }
+  { value: 'month', label: 'Last 30 days' },
+  { value: 'week', label: 'Last 7 days' }
 ];
+
+// The view is a rolling period or `season:<slug>`.
+const seasonView = (s: Season) => `season:${s.slug}`;
+const STATE_LABELS: Record<Season['state'], string> = { LIVE: 'is live', UPCOMING: 'starts soon', ENDED: 'has ended' };
+const dateOnly = (iso: string) => new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 
 const PODIUM = [
   { ring: '', medal: 'from-amber-200 to-amber-500', offset: 'sm:pt-0', order: 'sm:order-2' },
@@ -54,18 +60,32 @@ function Row({ r, board, me }: { r: LeaderboardRow; board: Board; me: boolean })
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const [board, setBoard] = useState<Board>('xp');
-  const [period, setPeriod] = useState<Period>('all');
+  const [view, setView] = useState<string | null>(null);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [category, setCategory] = useState<Category | ''>('');
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
   const [data, setData] = useState<LeaderboardResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Opens on the live season when there is one.
   useEffect(() => {
+    api<Season[]>('/api/seasons')
+      .then((s) => {
+        setSeasons(s);
+        const live = s.find((x) => x.state === 'LIVE');
+        setView((v) => v ?? (live ? seasonView(live) : 'all'));
+      })
+      .catch(() => setView((v) => v ?? 'all'));
+  }, []);
+
+  useEffect(() => {
+    if (!view) return;
     let cancelled = false;
     setError(null);
     setLoading(true);
-    const qs = new URLSearchParams({ board, period, ...(category && { category }), ...(difficulty && { difficulty }) });
+    const scope: Record<string, string> = view.startsWith('season:') ? { season: view.slice(7) } : { period: view };
+    const qs = new URLSearchParams({ board, ...scope, ...(category && { category }), ...(difficulty && { difficulty }) });
     api<LeaderboardResponse>(`/api/leaderboard?${qs}`)
       .then((d) => !cancelled && setData(d))
       .catch((e) => !cancelled && setError(errorMessage(e)))
@@ -73,7 +93,7 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [board, period, category, difficulty, user?.id]);
+  }, [board, view, category, difficulty, user?.id]);
 
   const cfg = BOARDS.find((b) => b.value === board)!;
   const rows = data?.rows ?? [];
@@ -86,8 +106,13 @@ export default function LeaderboardPage() {
 
       <div className="mb-8 flex flex-wrap items-center gap-3">
         <SegmentedTabs label="Leaderboard" options={BOARDS} value={board} onChange={setBoard} />
-        <SegmentedTabs label="Time period" options={PERIODS} value={period} onChange={setPeriod} />
-        <div className="flex gap-2 sm:ml-auto">
+        <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row">
+          <select className={cx(inputClass, 'w-auto')} value={view ?? ''} onChange={(e) => setView(e.target.value)} aria-label="Time period">
+            {seasons.filter((s) => s.state !== 'UPCOMING').map((s) => (
+              <option key={s.id} value={seasonView(s)}>{s.name}{s.state === 'LIVE' ? ' (live)' : ''}</option>
+            ))}
+            {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
           <select className={cx(inputClass, 'w-auto')} value={category} onChange={(e) => setCategory(e.target.value as Category | '')} aria-label="Category">
             <option value="">All categories</option>
             {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
@@ -99,6 +124,13 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
+      {data?.season && (
+        <p className="-mt-4 mb-6 text-sm text-slate-600">
+          <span className="font-semibold text-slate-900">{data.season.name}</span> {STATE_LABELS[data.season.state]} · {dateOnly(data.season.startsAt)} to {dateOnly(data.season.endsAt)}
+          {data.season.state === 'LIVE' && <> · ends in <Countdown to={data.season.endsAt} className="font-mono tabular-nums text-slate-900" /></>}
+          {data.season.state === 'ENDED' && ' · final standings, still updating if reviews are pending'}
+        </p>
+      )}
       <ErrorBox message={error} />
       {!data && !error && <Spinner className="mt-12" />}
       <div aria-busy={loading} className={cx('transition-opacity duration-150 ease-out', loading && data && 'opacity-50')}>

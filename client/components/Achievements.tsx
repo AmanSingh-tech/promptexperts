@@ -1,4 +1,4 @@
-import { CalendarCheck, Compass, Flag, Flame, Lock, Medal, Mountain, Sparkles, Target, Trophy, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Crown, Compass, Flag, Flame, Lock, Medal, Mountain, Sparkles, Target, Trophy, type LucideIcon } from 'lucide-react';
 import { formatDate } from '@/lib/format';
 import type { Achievement } from '@/lib/types';
 import { Card, cx } from './ui';
@@ -13,7 +13,8 @@ const ICONS: Record<string, LucideIcon> = {
   'streak-3': Flame,
   'streak-7': Flame,
   'daily-5': CalendarCheck,
-  podium: Trophy
+  podium: Trophy,
+  'season-podium': Crown
 };
 
 export function AchievementIcon({ id, className }: { id: string; className?: string }) {

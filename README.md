@@ -16,11 +16,12 @@ The AI conversation is captured in three ways: a built-in Claude assistant next 
 | Attempts | Every attempt is an AI session. Submitting locks the code and the transcript together; "New attempt" discards the current conversation |
 | Review | Queue with **To review / Disputed / Final** tabs. Reviewers get automatic transcript analysis with suggested scores, a code-history timeline with diffs (it flags large pastes), and an optional Claude second opinion. A rubric guide gives anchored examples for scores 1, 3 and 5 (`/review/guide`). With `REQUIRED_REVIEWS` set above 1, each submission needs that many independent reviews. Reviewers can't see each other's scores until they submit their own. If reviewers disagree (a gap of 2+ rubric points, 25+ solution points or 15+ final points), the result is **disputed** until an admin accepts it or adds a deciding review. Only final results reach the player and the leaderboard |
 | Scores | `AI usage = (mean rubric − 1) / 4 × 100`, `final = 0.4 × solution + 0.6 × AI usage` |
-| Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
+| Leaderboard | Three boards: **XP** (sum of best final score per challenge), **AI mastery** (average AI-usage score) and **Solvers** (average solution score). The average boards need at least 2 reviewed challenges. Filter by season, all time, the last 30 days or the last 7 days, and by category or difficulty. Your own position stays pinned even outside the top 100 |
 | Contests | Timed events with a start and end, an ordered set of challenges, and entrants. Unpublished challenges in a contest stay hidden until it starts. A submission counts only when it's made during the contest by someone who joined, on one of its challenges. Standings add up each player's best reviewed score per challenge, show pending reviews separately, and break ties by who reached their total first. Admins create and edit contests in **Admin → Contests** |
+| Seasons | Admins set named, non-overlapping date ranges in **Admin → Seasons**. Each season has its own XP board, and the leaderboard opens on the live one. XP, levels and tiers are lifetime and never reset. The top three on an ended season's board with more than 3 players get a **Season medal**, once every review of a submission made during the season is final |
 | Daily challenge | One featured challenge per UTC day on the Practice page, cycling through every published challenge before repeating. It gives no extra XP |
 | Streaks | Count consecutive UTC days with a passing submission or a written answer sent for review. A repeat of a challenge only counts on the day it's the daily. Written answers count straight away but drop out if the reviewer gives them a solution score under 50. A streak ends after a full day is missed |
-| Achievements | Ten badges for reviews, scores, streaks, daily challenges and contest podiums, shown on player pages. Earned dates come from the player's history, unreviewed written answers don't count towards them, and once earned they stay, even if a re-review lowers the score |
+| Achievements | Eleven badges for reviews, scores, streaks, daily challenges, contest podiums and season medals, shown on player pages. Earned dates come from the player's history, unreviewed written answers don't count towards them, and once earned they stay, even if a re-review lowers the score |
 | Level-up updates | After a review goes final, a dialog shows XP gained plus any new level, tier, rank and achievements since the player last dismissed it. It waits until they leave the problem workspace. Accounts created before this feature start from their current progress, so their history isn't replayed as one update |
 | Player pages | Public `/players/:username` pages with level, tier, rank, streak, achievements, skill stats, score history and cleared challenges. Code and AI transcripts stay private |
 | Profile | Score trend, rubric averages and a tip for the weakest rubric |
@@ -97,7 +98,7 @@ npm test
 ```
 
 - `server/test/*.test.js`: scoring, transcript parser, AI-usage heuristics, output comparison, streaks and achievements
-- `server/test/integration/`: end-to-end API flow against the real database and sandbox (register → session → import → run → submit → review → leaderboard, role checks, written problems, admin problem management), plus shared rate limits, judge slots and the extension's attempt list
+- `server/test/integration/`: end-to-end API flow against the real database and sandbox (register → session → import → run → submit → review → leaderboard, role checks, written problems, admin problem management), plus seasons, shared rate limits, judge slots and the extension's attempt list
 - client type check
 
 Expected outputs for the seeded problems are generated from reference solutions with `npm --prefix server run seed:expected`.
@@ -116,12 +117,14 @@ Expected outputs for the seeded problems are generated from reference solutions 
 | GET | `/api/evaluations/queue`, `/api/evaluations/:solveId/analysis` | reviewer, admin |
 | POST | `/api/evaluations/:solveId/ai-review` | reviewer, admin |
 | PUT | `/api/evaluations/:solveId` | reviewer, admin (not on own submissions) |
-| GET | `/api/leaderboard?board=xp\|ai\|solution&period=all\|month\|week`, `/api/players/:username` | anyone |
+| GET | `/api/leaderboard?board=xp\|ai\|solution&period=all\|month\|week` (or `&season=<slug>`), `/api/players/:username` | anyone |
 | GET | `/api/me/stats`, `/api/me/progress`; POST `/api/me/progress/seen` | signed in |
 | GET | `/api/daily` | anyone (streak and completion when signed in) |
 | GET | `/api/contests`, `/api/contests/:slug` (details plus standings) | anyone |
 | POST | `/api/contests/:slug/join`; `contestId` on `POST /api/submissions` | signed in |
 | POST/PATCH/DELETE | `/api/contests[/:id]` | admin |
+| GET | `/api/seasons` | anyone |
+| POST/PATCH/DELETE | `/api/seasons[/:id]` | admin |
 | GET/PATCH | `/api/admin/overview`, `/api/admin/users`, `/api/admin/users/:id/role` | admin |
 
 ## Known limitations

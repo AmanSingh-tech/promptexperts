@@ -279,6 +279,7 @@ export type Period = 'week' | 'month' | 'all';
 export interface LeaderboardResponse {
   board: Board;
   period: Period;
+  season: Season | null;
   minForAverage: number;
   total: number;
   rows: LeaderboardRow[];
@@ -286,6 +287,15 @@ export interface LeaderboardResponse {
 }
 
 export type ContestState = 'UPCOMING' | 'LIVE' | 'ENDED';
+
+export interface Season {
+  id: string;
+  slug: string;
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  state: ContestState;
+}
 
 export interface ContestSummary {
   id: string;

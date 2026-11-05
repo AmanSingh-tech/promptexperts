@@ -123,7 +123,7 @@ test('progress is private and player pages show streak and achievements', async 
 
   const page = await api('GET', `/api/players/${player.username}`);
   assert.deepEqual(page.body.streak, { current: 1, best: 1, activeToday: true });
-  assert.equal(page.body.achievements.length, 10);
+  assert.equal(page.body.achievements.length, 11);
   assert.ok(page.body.achievements.find((a) => a.key === 'first-run').earnedAt);
   assert.equal(page.body.achievements.find((a) => a.key === 'podium').earnedAt, null);
   assert.equal(page.body.progressSeen, undefined);

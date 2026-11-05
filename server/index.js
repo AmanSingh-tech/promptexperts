@@ -9,6 +9,7 @@ import submissionRoutes from './routes/submissions.js';
 import evaluationRoutes from './routes/evaluations.js';
 import statsRoutes from './routes/stats.js';
 import contestRoutes from './routes/contests.js';
+import seasonRoutes from './routes/seasons.js';
 import { csrfGuard } from './middleware/auth.js';
 
 if (!process.env.JWT_SECRET) {
@@ -43,6 +44,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/contests', contestRoutes);
+app.use('/api/seasons', seasonRoutes);
 app.use('/api', statsRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));

@@ -63,15 +63,16 @@ export const ACHIEVEMENTS = [
   { key: 'streak-3', title: 'Warming up', description: 'Reach a 3-day streak', earned: (f) => f.bestStreak >= 3 },
   { key: 'streak-7', title: 'On fire', description: 'Reach a 7-day streak', earned: (f) => f.bestStreak >= 7 },
   { key: 'daily-5', title: 'Daily driver', description: 'Clear 5 daily challenges', earned: (f) => f.dailyCleared >= 5 },
-  { key: 'podium', title: 'Podium finish', description: 'Finish top 3 in a contest with more than 3 entrants', earned: (f) => f.podiums >= 1 }
+  { key: 'podium', title: 'Podium finish', description: 'Finish top 3 in a contest with more than 3 entrants', earned: (f) => f.podiums >= 1 },
+  { key: 'season-podium', title: 'Season medal', description: 'Finish top 3 on a season XP board with more than 3 players', earned: (f) => f.seasonPodiums >= 1 }
 ];
 
 // Replays a player's history to find when each achievement was first reached. Only confirmed
 // runs count here: achievements are permanent, and an unreviewed answer could still be rejected.
-// facts: evaluated [{ date, ...scores }], runs from countedRuns, podiums [date].
-export function earnedAchievements({ evaluated, runs, podiums }) {
+// facts: evaluated [{ date, ...scores }], runs from countedRuns, podiums and seasonPodiums [date].
+export function earnedAchievements({ evaluated, runs, podiums, seasonPodiums = [] }) {
   const confirmed = runs.filter((r) => r.confirmed);
-  const dates = [...evaluated.map((e) => e.date), ...confirmed.map((r) => r.date), ...podiums].sort((a, b) => a - b);
+  const dates = [...evaluated.map((e) => e.date), ...confirmed.map((r) => r.date), ...podiums, ...seasonPodiums].sort((a, b) => a - b);
   const earned = new Map();
   for (const date of dates) {
     const upTo = confirmed.filter((r) => r.date <= date);
@@ -79,7 +80,8 @@ export function earnedAchievements({ evaluated, runs, podiums }) {
       evaluated: evaluated.filter((e) => e.date <= date),
       bestStreak: computeStreak(upTo.map((r) => r.day)).best,
       dailyCleared: new Set(upTo.filter((r) => r.daily).map((r) => r.day)).size,
-      podiums: podiums.filter((d) => d <= date).length
+      podiums: podiums.filter((d) => d <= date).length,
+      seasonPodiums: seasonPodiums.filter((d) => d <= date).length
     };
     for (const a of ACHIEVEMENTS) if (!earned.has(a.key) && a.earned(facts)) earned.set(a.key, date);
   }

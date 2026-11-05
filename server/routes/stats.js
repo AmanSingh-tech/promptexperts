@@ -6,6 +6,7 @@ import { RUBRIC_KEYS } from '../lib/scoring.js';
 import { computeStandings } from '../lib/contests.js';
 import { ACHIEVEMENTS, STREAK_STATUSES, computeStreak, countedRuns, dayKey, earnedAchievements, nextDayStart } from '../lib/game.js';
 import { CATEGORIES, DIFFICULTIES } from './problems.js';
+import { withState } from './seasons.js';
 
 const router = Router();
 
@@ -15,13 +16,17 @@ export const BOARDS = ['xp', 'ai', 'solution'];
 const PERIOD_DAYS = { week: 7, month: 30 };
 export const MIN_FOR_AVERAGE = 2;
 
-async function computeLeaderboard({ category, difficulty, period, board = 'xp' } = {}) {
+// A season, when given, replaces the rolling period with its own window.
+async function computeLeaderboard({ category, difficulty, period, board = 'xp', season } = {}) {
   const days = PERIOD_DAYS[period];
+  const window = season
+    ? { gte: season.startsAt, lt: season.endsAt }
+    : days && { gte: new Date(Date.now() - days * 86400000) };
   const evaluations = await prisma.evaluation.findMany({
     where: {
       status: 'FINAL',
       solve: {
-        ...(days && { submittedAt: { gte: new Date(Date.now() - days * 86400000) } }),
+        ...(window && { submittedAt: window }),
         problem: {
           ...(CATEGORIES.includes(category) && { category }),
           ...(DIFFICULTIES.includes(difficulty) && { difficulty })
@@ -72,10 +77,13 @@ async function computeLeaderboard({ category, difficulty, period, board = 'xp' }
 router.get('/leaderboard', optionalAuth, async (req, res) => {
   const board = BOARDS.includes(req.query.board) ? req.query.board : 'xp';
   const period = PERIOD_DAYS[req.query.period] ? req.query.period : 'all';
-  const rows = await computeLeaderboard({ ...req.query, board, period });
+  const season = req.query.season ? await prisma.season.findUnique({ where: { slug: String(req.query.season) } }) : null;
+  if (req.query.season && !season) throw notFound('Season not found');
+  const rows = await computeLeaderboard({ ...req.query, board, period, season });
   res.json({
     board,
     period,
+    season: season && withState(season),
     minForAverage: MIN_FOR_AVERAGE,
     total: rows.length,
     rows: rows.slice(0, 100),
@@ -99,6 +107,24 @@ async function contestPodiums(userId) {
   return podiums;
 }
 
+// Top three of an ended season's XP board with more than three players, once every review of a
+// submission made during the season is final, so late reviews can't reshuffle the medals.
+async function seasonPodiums(userId) {
+  const seasons = await prisma.season.findMany({ where: { endsAt: { lt: new Date() } } });
+  const podiums = [];
+  for (const season of seasons) {
+    const window = { gte: season.startsAt, lt: season.endsAt };
+    const unsettled = await prisma.solve.count({
+      where: { submittedAt: window, OR: [{ evaluation: null }, { evaluation: { status: { not: 'FINAL' } } }] }
+    });
+    if (unsettled) continue;
+    const rows = await computeLeaderboard({ season });
+    if (rows.length <= 3) continue;
+    if (rows.slice(0, 3).some((r) => r.userId === userId)) podiums.push(season.endsAt);
+  }
+  return podiums;
+}
+
 async function streakRuns(solves) {
   const days = [...new Set(solves.filter((s) => STREAK_STATUSES.includes(s.status)).map((s) => dayKey(s.submittedAt)))];
   const dailies = await prisma.dailyChallenge.findMany({ where: { date: { in: days } } });
@@ -112,7 +138,8 @@ async function syncAchievements(userId, { evaluated, runs }) {
   const earned = earnedAchievements({
     evaluated: evaluated.map((s) => ({ ...s.evaluation, date: s.submittedAt, difficulty: s.problem.difficulty, category: s.problem.category })),
     runs,
-    podiums: earnedAt.has('podium') ? [] : await contestPodiums(userId)
+    podiums: earnedAt.has('podium') ? [] : await contestPodiums(userId),
+    seasonPodiums: earnedAt.has('season-podium') ? [] : await seasonPodiums(userId)
   });
   const fresh = [...earned].filter(([key]) => !earnedAt.has(key));
   if (fresh.length) {

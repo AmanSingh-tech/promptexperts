@@ -99,3 +99,10 @@ test('daily clears count distinct days', () => {
   assert.deepEqual(keys({ ...none, runs: [...runs, runs[0]] }), []);
   assert.deepEqual(keys({ ...none, runs: [...runs, streakRun('2026-10-09', { daily: true })] }), ['daily-5']);
 });
+
+test('a season medal is earned on the date the season ended', () => {
+  const ended = new Date('2026-10-31T00:00:00Z');
+  const earned = earnedAchievements({ ...none, seasonPodiums: [ended] });
+  assert.deepEqual([...earned], [['season-podium', ended]]);
+  assert.equal(keys(none).includes('season-podium'), false);
+});
