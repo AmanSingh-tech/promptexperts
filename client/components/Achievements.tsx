@@ -1,4 +1,4 @@
-import { CalendarCheck, Crown, Compass, Flag, Flame, Lock, Medal, Mountain, Sparkles, Target, Trophy, type LucideIcon } from 'lucide-react';
+import { Award, CalendarCheck, CalendarDays, Crown, Compass, Flag, Flame, Lock, Medal, Mountain, Sparkles, Target, Trophy, Zap, type LucideIcon } from 'lucide-react';
 import { formatDate } from '@/lib/format';
 import type { Achievement } from '@/lib/types';
 import { Card, cx } from './ui';
@@ -6,13 +6,16 @@ import { Card, cx } from './ui';
 const ICONS: Record<string, LucideIcon> = {
   'first-run': Flag,
   veteran: Medal,
+  centurion: Award,
   'prompt-master': Sparkles,
   flawless: Target,
   'hard-mode': Mountain,
   'all-rounder': Compass,
   'streak-3': Flame,
   'streak-7': Flame,
+  'streak-30': Zap,
   'daily-5': CalendarCheck,
+  'daily-30': CalendarDays,
   podium: Trophy,
   'season-podium': Crown
 };

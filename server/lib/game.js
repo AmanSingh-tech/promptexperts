@@ -56,13 +56,16 @@ export function computeStreak(days, today = dayKey(new Date())) {
 export const ACHIEVEMENTS = [
   { key: 'first-run', title: 'Off the line', description: 'Get your first run reviewed', earned: (f) => f.evaluated.length >= 1 },
   { key: 'veteran', title: 'Veteran', description: 'Get 5 runs reviewed', earned: (f) => f.evaluated.length >= 5 },
+  { key: 'centurion', title: 'Centurion', description: 'Get 25 runs reviewed', earned: (f) => f.evaluated.length >= 25 },
   { key: 'prompt-master', title: 'Prompt master', description: 'Score 100 for AI usage on a run', earned: (f) => f.evaluated.some((e) => e.aiUsageScore === 100) },
   { key: 'flawless', title: 'Flawless', description: 'Score 90+ overall with a perfect solution', earned: (f) => f.evaluated.some((e) => e.solutionScore === 100 && e.finalScore >= 90) },
   { key: 'hard-mode', title: 'Hard mode', description: 'Score 75+ on a hard challenge', earned: (f) => f.evaluated.some((e) => e.difficulty === 'HARD' && e.finalScore >= 75) },
   { key: 'all-rounder', title: 'All-rounder', description: 'Get runs reviewed in 3 categories', earned: (f) => new Set(f.evaluated.map((e) => e.category)).size >= 3 },
   { key: 'streak-3', title: 'Warming up', description: 'Reach a 3-day streak', earned: (f) => f.bestStreak >= 3 },
   { key: 'streak-7', title: 'On fire', description: 'Reach a 7-day streak', earned: (f) => f.bestStreak >= 7 },
+  { key: 'streak-30', title: 'Unstoppable', description: 'Reach a 30-day streak', earned: (f) => f.bestStreak >= 30 },
   { key: 'daily-5', title: 'Daily driver', description: 'Clear 5 daily challenges', earned: (f) => f.dailyCleared >= 5 },
+  { key: 'daily-30', title: 'Daily devotee', description: 'Clear 30 daily challenges', earned: (f) => f.dailyCleared >= 30 },
   { key: 'podium', title: 'Podium finish', description: 'Finish top 3 in a contest with more than 3 entrants', earned: (f) => f.podiums >= 1 },
   { key: 'season-podium', title: 'Season medal', description: 'Finish top 3 on a season XP board with more than 3 players', earned: (f) => f.seasonPodiums >= 1 }
 ];
