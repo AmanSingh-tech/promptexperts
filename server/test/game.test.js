@@ -7,6 +7,7 @@ const day1 = new Date('2026-10-01T10:00:00Z');
 const run = (over) => ({ date: day1, solutionScore: 50, aiUsageScore: 50, finalScore: 50, difficulty: 'EASY', category: 'ALGORITHMS', ...over });
 const keys = (facts) => [...earnedAchievements(facts).keys()];
 const streakRun = (day, over) => ({ problemId: day, date: new Date(`${day}T10:00:00Z`), day, daily: false, confirmed: true, ...over });
+const dayAfter = (n) => new Date(Date.UTC(2026, 9, 1 + n)).toISOString().slice(0, 10);
 const solve = (problemId, day, status = 'ACCEPTED', evaluation = null) => ({ problemId, status, evaluation, submittedAt: `${day}T10:00:00Z` });
 
 test('days use UTC and reset at the next UTC midnight', () => {
@@ -98,6 +99,31 @@ test('daily clears count distinct days', () => {
   const runs = days.map((d) => streakRun(d, { daily: true }));
   assert.deepEqual(keys({ ...none, runs: [...runs, runs[0]] }), []);
   assert.deepEqual(keys({ ...none, runs: [...runs, streakRun('2026-10-09', { daily: true })] }), ['daily-5']);
+});
+
+test('Unstoppable needs a 30-day streak', () => {
+  const days = Array.from({ length: 30 }, (_, i) => dayAfter(i));
+  const runs = days.map((d) => streakRun(d));
+  assert.ok(!keys({ ...none, runs: runs.slice(0, 29) }).includes('streak-30'));
+  assert.deepEqual(earnedAchievements({ ...none, runs }).get('streak-30'), new Date(`${days[29]}T10:00:00Z`));
+  assert.ok(!keys({ ...none, runs: runs.map((r) => ({ ...r, confirmed: false })) }).includes('streak-30'));
+});
+
+test('Centurion needs 25 reviewed runs', () => {
+  const evaluated = Array.from({ length: 25 }, (_, i) => run({ date: new Date(`${dayAfter(i)}T10:00:00Z`) }));
+  const before = keys({ ...none, evaluated: evaluated.slice(0, 24) });
+  assert.ok(!before.includes('centurion'));
+  assert.ok(before.includes('veteran'));
+  assert.deepEqual(earnedAchievements({ ...none, evaluated }).get('centurion'), evaluated[24].date);
+});
+
+test('Daily devotee needs 30 distinct daily clears', () => {
+  const runs = Array.from({ length: 30 }, (_, i) => streakRun(dayAfter(i * 2), { daily: true }));
+  const before = keys({ ...none, runs: [...runs.slice(0, 29), runs[0]] });
+  assert.ok(!before.includes('daily-30'));
+  assert.ok(before.includes('daily-5'));
+  assert.deepEqual(earnedAchievements({ ...none, runs }).get('daily-30'), runs[29].date);
+  assert.ok(!keys({ ...none, runs: runs.map((r) => ({ ...r, confirmed: false })) }).includes('daily-30'));
 });
 
 test('a season medal is earned on the date the season ended', () => {
