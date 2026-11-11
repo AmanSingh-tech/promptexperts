@@ -132,3 +132,45 @@ Expected outputs for the seeded problems are generated from reference solutions 
 - The automatic analysis is heuristic and English-centric; it suggests scores, and the reviewer decides.
 - The Chrome extension reads each site's page structure, which can change without notice. Its selectors have only been tested against sample pages, so check them on the live sites. Transcript import and file upload remain the fallback.
 - The Claude chat and AI second opinion have only been exercised against a stubbed API in tests; check them once with a real `ANTHROPIC_API_KEY`.
+
+## Contributing
+
+Contributions are welcome. This section covers the local development workflow.
+
+### Prerequisites
+
+- Node 18.18+
+- Docker with `docker-compose`, which runs Postgres (port 5435) and the judge sandbox image
+
+### Install and run locally
+
+```bash
+# 1. Install the root, server/ and client/ dependencies
+npm run install:all
+
+# 2. Configure the API: set JWT_SECRET; ANTHROPIC_API_KEY is optional and only needed for the AI features
+cp server/.env.example server/.env
+
+# 3. Configure the web app
+cp client/.env.example client/.env.local
+
+# 4. Start the db container, build the ailogracer-sandbox image, apply migrations and seed data
+npm run setup
+
+# 5. Start the API on :3001 (node --watch) and the web app on :3000
+npm run dev
+```
+
+Sign in with the seeded accounts listed under [Getting started](#getting-started). To add leaderboard data, you can also run `npm --prefix server run db:seed:demo`.
+
+### Making changes
+
+- For schema changes, create a migration with `npm --prefix server run db:migrate` (`prisma migrate dev`).
+- `JUDGE_MODE=local` runs the judge faster during development but is **not isolated**. See [Judge modes](#judge-modes).
+- Add or update tests next to the existing ones: `server/test/*.test.js` for unit tests, `server/test/integration/` for API tests.
+
+### Before opening a pull request
+
+- Run `npm test`. It runs the unit tests, the API tests and the client type check. The API tests need the database from `npm run setup` to be running.
+- CI (`.github/workflows/ci.yml`) runs the same checks on every push and pull request.
+- Keep pull requests small and focused.
